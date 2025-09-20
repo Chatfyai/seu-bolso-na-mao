@@ -17,13 +17,13 @@ const Login = () => {
     e.preventDefault();
     // TODO: Implement actual login logic with Supabase
     console.log("Login attempt:", { email, password, rememberMe });
-    navigate("/profile");
+    navigate("/account-type");
   };
 
   const handleGoogleLogin = () => {
     // TODO: Implement Google OAuth with Supabase
     console.log("Google login attempt");
-    navigate("/profile");
+    navigate("/account-type");
   };
 
   return (
