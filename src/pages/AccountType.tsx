@@ -19,11 +19,11 @@ const AccountType = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="pt-16 pb-8 px-4">
-        <h1 className="text-2xl font-medium text-foreground text-center">
+      <div className="pt-8 pb-8">
+        <h1 className="text-2xl font-medium text-foreground text-center px-4">
           Escolha o tipo de conta
         </h1>
-        <Separator className="mt-8" />
+        <Separator className="mt-8 w-full" />
       </div>
 
       {/* Account Options - Centered in screen */}
