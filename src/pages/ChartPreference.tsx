@@ -39,7 +39,7 @@ const ChartPreference = () => {
 
       {/* Main Content */}
       <main className="flex flex-col px-6 pt-10 pb-6 h-screen">
-        <h1 className="text-xl font-semibold text-foreground mb-8">
+        <h1 className="text-sm text-muted-foreground mt-2">
           Marque o gráfico que mais chama atenção para você
         </h1>
 
