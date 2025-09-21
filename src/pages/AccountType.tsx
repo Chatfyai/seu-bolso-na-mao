@@ -8,7 +8,7 @@ const AccountType = () => {
 
   const handlePersonalAccount = () => {
     // TODO: Implement account type selection logic with Supabase
-    navigate("/profile");
+    navigate("/setup");
   };
 
   const handleBusinessAccount = () => {
