@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Info } from "lucide-react";
+import { Plus, Info, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -29,6 +29,16 @@ const Setup = () => {
   const updateSaida = (index: number, value: string) => {
     const newSaidas = [...saidas];
     newSaidas[index] = value;
+    setSaidas(newSaidas);
+  };
+
+  const deleteEntrada = (index: number) => {
+    const newEntradas = entradas.filter((_, i) => i !== index);
+    setEntradas(newEntradas);
+  };
+
+  const deleteSaida = (index: number) => {
+    const newSaidas = saidas.filter((_, i) => i !== index);
     setSaidas(newSaidas);
   };
 
@@ -74,13 +84,24 @@ const Setup = () => {
             
             <div className="space-y-3">
               {entradas.map((entrada, index) => (
-                <Input
-                  key={index}
-                  value={entrada}
-                  onChange={(e) => updateEntrada(index, e.target.value)}
-                  className="border-2 border-green-500 rounded-xl bg-background"
-                  placeholder="Ex: salário"
-                />
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={entrada}
+                    onChange={(e) => updateEntrada(index, e.target.value)}
+                    className="border-2 border-green-500 rounded-xl bg-background flex-1"
+                    placeholder="Ex: salário"
+                  />
+                  {entradas.length > 1 && (
+                    <Button
+                      onClick={() => deleteEntrada(index)}
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-100 flex-shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               ))}
               
               <Button 
@@ -113,13 +134,24 @@ const Setup = () => {
             
             <div className="space-y-3">
               {saidas.map((saida, index) => (
-                <Input
-                  key={index}
-                  value={saida}
-                  onChange={(e) => updateSaida(index, e.target.value)}
-                  className="border-2 border-red-500 rounded-xl bg-background"
-                  placeholder="Ex: aluguel"
-                />
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={saida}
+                    onChange={(e) => updateSaida(index, e.target.value)}
+                    className="border-2 border-red-500 rounded-xl bg-background flex-1"
+                    placeholder="Ex: aluguel"
+                  />
+                  {saidas.length > 1 && (
+                    <Button
+                      onClick={() => deleteSaida(index)}
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-100 flex-shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               ))}
               
               <Button 
