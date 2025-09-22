@@ -5,9 +5,9 @@ const Loading = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Navigate to profile after 3 seconds
+    // Navigate to dashboard after 3 seconds
     const timer = setTimeout(() => {
-      navigate('/profile');
+      navigate('/dashboard');
     }, 3000);
 
     return () => clearTimeout(timer);

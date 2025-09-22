@@ -9,6 +9,7 @@ import AccountType from "./pages/AccountType";
 import Setup from "./pages/Setup";
 import Loading from "./pages/Loading";
 import ChartPreference from "./pages/ChartPreference";
+import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/setup" element={<Setup />} />
           <Route path="/loading" element={<Loading />} />
           <Route path="/chart-preference" element={<ChartPreference />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
