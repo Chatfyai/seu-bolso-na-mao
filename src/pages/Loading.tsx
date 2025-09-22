@@ -5,9 +5,9 @@ const Loading = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Navigate to chart preference after 3 seconds
+    // Navigate to profile after 3 seconds
     const timer = setTimeout(() => {
-      navigate('/chart-preference');
+      navigate('/profile');
     }, 3000);
 
     return () => clearTimeout(timer);

@@ -29,7 +29,7 @@ const ChartPreference = () => {
   ];
 
   const handleFinish = () => {
-    navigate('/profile');
+    navigate('/loading');
   };
 
   return (

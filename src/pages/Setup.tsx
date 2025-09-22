@@ -43,7 +43,7 @@ const Setup = () => {
   };
 
   const handleFinish = () => {
-    navigate('/loading');
+    navigate('/chart-preference');
   };
 
   return (
