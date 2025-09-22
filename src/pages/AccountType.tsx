@@ -1,7 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { User, Briefcase, ChevronRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 
 const AccountType = () => {
   const navigate = useNavigate();
@@ -16,79 +13,89 @@ const AccountType = () => {
     console.log("Business account selected - coming soon");
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="pt-8 pb-8">
-        <h1 className="text-2xl font-medium text-foreground text-center px-4">
-          Escolha o tipo de conta
-        </h1>
-        <Separator className="mt-8 w-full" />
-      </div>
+  const handleBack = () => {
+    navigate(-1);
+  };
 
-      {/* Account Options - Centered in screen */}
-      <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 200px)' }}>
-        <div className="w-full max-w-lg px-4 space-y-4">
+  return (
+    <div className="flex flex-col h-screen bg-white">
+      {/* Header */}
+      <header className="flex-shrink-0 bg-white shadow-sm z-10">
+        <div className="mx-auto flex h-16 max-w-md items-center justify-between px-4">
+          <button onClick={handleBack} className="p-2 -ml-2">
+            <span className="material-symbols-outlined text-gray-700">
+              arrow_back_ios_new
+            </span>
+          </button>
+          <h1 className="text-lg font-bold text-gray-900">Escolha o tipo de conta</h1>
+          <div className="w-8"></div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col bg-gradient-to-b from-white to-[#fafafa]">
+        <div className="flex-1 flex flex-col justify-center p-6 space-y-6">
           {/* Pessoa Física */}
           <div 
             onClick={handlePersonalAccount}
-            className="relative flex items-center p-5 bg-card border border-border rounded-2xl cursor-pointer hover:bg-accent/30 transition-all duration-200 group shadow-sm"
+            className="bg-white rounded-2xl border-l-4 border-[#3ecf8e] shadow-xl transition-transform duration-300 ease-in-out hover:scale-[1.02] cursor-pointer"
           >
-            {/* Green accent line */}
-            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary rounded-l-2xl"></div>
-            
-            {/* Icon */}
-            <div className="flex-shrink-0 mr-4">
-              <div className="w-14 h-14 bg-primary/15 rounded-2xl flex items-center justify-center">
-                <User className="h-7 w-7 text-primary" />
+            <div className="flex items-center gap-4 p-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-green-100">
+                <svg className="text-[#3ecf8e]" fill="currentColor" height="28" viewBox="0 0 256 256" width="28" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"></path>
+                </svg>
               </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1">
-              <h3 className="text-xl font-semibold text-foreground mb-1">
-                Pessoa Física
-              </h3>
-              <p className="text-muted-foreground">
-                Para gerenciar suas finanças pessoais.
-              </p>
-            </div>
-
-            {/* Arrow */}
-            <div className="flex-shrink-0 ml-4">
-              <ChevronRight className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+              <div className="flex-1">
+                <p className="text-base font-bold text-gray-900">Pessoa Física</p>
+                <p className="text-sm text-gray-500">Para suas finanças pessoais</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-[#3ecf8e]">
+                  check_circle
+                </span>
+                <span className="material-symbols-outlined text-[#3ecf8e]">
+                  arrow_forward_ios
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Pessoa Jurídica */}
           <div 
             onClick={handleBusinessAccount}
-            className="relative flex items-center p-5 bg-card border border-border rounded-2xl cursor-not-allowed opacity-75 shadow-sm"
+            className="bg-white rounded-2xl border border-gray-200 opacity-70 transition-transform duration-300 ease-in-out hover:scale-[1.02] cursor-not-allowed"
           >
-            {/* Icon */}
-            <div className="flex-shrink-0 mr-4">
-              <div className="w-14 h-14 bg-muted/60 rounded-2xl flex items-center justify-center">
-                <Briefcase className="h-7 w-7 text-muted-foreground" />
+            <div className="flex items-center gap-4 p-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gray-100">
+                <svg className="text-gray-400" fill="currentColor" height="28" viewBox="0 0 256 256" width="28" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M216,56H176V48a24,24,0,0,0-24-24H104A24,24,0,0,0,80,48v8H40A16,16,0,0,0,24,72V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V72A16,16,0,0,0,216,56ZM96,48a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96ZM216,72v41.61A184,184,0,0,1,128,136a184.07,184.07,0,0,1-88-22.38V72Zm0,128H40V131.64A200.19,200.19,0,0,0,128,152a200.25,200.25,0,0,0,88-20.37V200ZM104,112a8,8,0,0,1,8-8h32a8,8,0,0,1,0,16H112A8,8,0,0,1,104,112Z"></path>
+                </svg>
               </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-1">
-                <h3 className="text-xl font-semibold text-foreground">
-                  Pessoa Jurídica
-                </h3>
-                <Badge variant="secondary" className="bg-success/15 text-success text-xs px-3 py-1 font-medium">
-                  Em breve
-                </Badge>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-base font-bold text-gray-600">Pessoa Jurídica</p>
+                  <span className="text-xs font-semibold bg-green-100 text-green-800 px-2 py-1 rounded-full">Em breve</span>
+                </div>
+                <p className="text-sm text-gray-400">Para as finanças da sua empresa</p>
               </div>
-              <p className="text-muted-foreground">
-                Para gerenciar as finanças da sua empresa.
-              </p>
             </div>
           </div>
         </div>
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="flex-shrink-0 bg-white p-6">
+        <div className="max-w-md mx-auto space-y-4">
+          <p className="text-center text-sm text-gray-500">Você pode alterar essa configuração a qualquer momento.</p>
+          <button 
+            onClick={handlePersonalAccount}
+            className="w-full bg-[#3ecf8e] text-white font-bold py-4 rounded-xl shadow-lg shadow-green-500/20 hover:bg-green-600 transition-all duration-300"
+          >
+            Continuar
+          </button>
+        </div>
+      </footer>
     </div>
   );
 };

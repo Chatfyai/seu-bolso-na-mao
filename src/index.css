@@ -1,3 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -110,5 +114,135 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  /* Login Form Styles */
+  .form-input {
+    height: 56px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    padding-left: 44px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .form-input:focus {
+    border-color: #3ecf8e;
+    box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.2);
+    outline: none;
+  }
+  
+  .custom-checkbox {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .custom-checkbox:checked {
+    background-color: #3ecf8e;
+    border-color: #3ecf8e;
+  }
+  
+  .custom-checkbox:checked::after {
+    content: '\2713';
+    font-size: 14px;
+    color: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  
+  .btn-primary {
+    height: 56px;
+    border-radius: 8px;
+    background-image: linear-gradient(to right, #3ecf8e, #2f855a);
+    box-shadow: 0 4px 14px 0 rgba(62, 207, 142, 0.39);
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .btn-primary:hover {
+    box-shadow: 0 6px 20px 0 rgba(62, 207, 142, 0.45);
+  }
+  
+  .btn-google {
+    height: 56px;
+  }
+  
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  
+  .input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #718096;
+    pointer-events: none;
+  }
+  
+  .form-input:focus + .input-icon {
+    color: #3ecf8e;
+  }
+
+  /* Setup Page Styles */
+  .safe-area-top {
+    padding-top: calc(env(safe-area-inset-top) + 5px);
+  }
+  
+  .progress-bar-bg {
+    background-color: #e5e7eb;
+  }
+  
+  .card {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+  
+  .input-focus:focus {
+    border-color: #3ecf8e;
+    background-color: #fafbfc;
+    box-shadow: 0 0 0 2px rgba(62, 207, 142, 0.2);
+  }
+  
+  .input-focus-red:focus {
+    border-color: #FF7F6A;
+    background-color: #fff5f3;
+    box-shadow: 0 0 0 2px rgba(255, 127, 106, 0.2);
+  }
+
+  /* Chart Preference Page Styles (scoped to avoid conflicts with Setup) */
+  .chart-card {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    height: 76px;
+    padding: 20px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .chart-card.selected {
+    background-color: #f0fdf4;
+    border-color: #d1fae5;
+    border-left: 4px solid #3ecf8e;
+  }
+  
+  .radio-custom {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #e9ecef;
+    border-radius: 50%;
   }
 }

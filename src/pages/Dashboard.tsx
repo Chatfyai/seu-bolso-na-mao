@@ -1,30 +1,114 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [accountType, setAccountType] = useState('Pessoa Física');
-  const [showOverlay, setShowOverlay] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(true);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const handleCloseOverlay = () => {
-    setShowOverlay(false);
-    navigate('/profile');
+  const handleCloseTutorial = () => {
+    setShowTutorial(false);
+  };
+
+  const toggleMenu = () => {
+    setShowMenu(!showMenu);
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMenu]);
+
+  const handleMenuItemClick = (action: string) => {
+    setShowMenu(false);
+    switch (action) {
+      case 'profile':
+        // TODO: Navigate to profile page when implemented
+        console.log('Perfil em desenvolvimento');
+        break;
+      case 'settings':
+        // TODO: Navigate to settings page
+        console.log('Configurações');
+        break;
+      case 'help':
+        // TODO: Navigate to help page
+        console.log('Ajuda');
+        break;
+      case 'logout':
+        // TODO: Implement logout
+        navigate('/login');
+        break;
+      default:
+        break;
+    }
   };
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background">
       <div className="flex-grow">
         {/* Header */}
-        <header className="bg-green-500 p-4 pb-12 text-white">
+        <header className="bg-green-500 p-4 pb-12 text-white relative">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 shrink-0 rounded-full bg-cover bg-center bg-gray-400"></div>
               <h1 className="text-lg font-bold">Olá, Sofia!</h1>
             </div>
-            <div className="flex items-center gap-2">
-              <button className="flex h-12 w-12 items-center justify-center rounded-full text-white">
-                <span className="material-symbols-outlined">notifications</span>
+            <div className="flex items-center gap-2 relative" ref={menuRef}>
+              <button 
+                onClick={toggleMenu}
+                className="flex h-12 w-12 items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors"
+              >
+                <span className="material-symbols-outlined">menu</span>
               </button>
+              
+              {/* Dropdown Menu */}
+              {showMenu && (
+                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+                  <button
+                    onClick={() => handleMenuItemClick('profile')}
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                  >
+                    <span className="material-symbols-outlined text-gray-500">person</span>
+                    Perfil
+                  </button>
+                  <button
+                    onClick={() => handleMenuItemClick('settings')}
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                  >
+                    <span className="material-symbols-outlined text-gray-500">settings</span>
+                    Configurações
+                  </button>
+                  <button
+                    onClick={() => handleMenuItemClick('help')}
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                  >
+                    <span className="material-symbols-outlined text-gray-500">help</span>
+                    Ajuda
+                  </button>
+                  <hr className="my-2 border-gray-200" />
+                  <button
+                    onClick={() => handleMenuItemClick('logout')}
+                    className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-3"
+                  >
+                    <span className="material-symbols-outlined text-red-500">logout</span>
+                    Sair
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -115,10 +199,10 @@ const Dashboard = () => {
         </div>
 
         {/* Tutorial Overlay */}
-        {showOverlay && (
-          <div className="absolute inset-0 flex flex-col items-center justify-end bg-black/30 backdrop-blur-sm p-4 z-20">
+        {showTutorial && (
+          <div className="absolute inset-0 flex flex-col items-center justify-end bg-black/30 backdrop-blur-sm p-4 z-[5]">
             <button 
-              onClick={handleCloseOverlay}
+              onClick={handleCloseTutorial}
               className="absolute top-6 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white"
             >
               <span className="material-symbols-outlined text-white">close</span>
@@ -126,11 +210,11 @@ const Dashboard = () => {
             <div className="relative flex w-full flex-col items-center justify-end" style={{marginBottom: '9rem'}}>
               <div className="relative mb-4 flex w-full justify-center">
                 <div className="relative">
-                  <p className="mb-2 rounded-lg bg-gray-800 px-4 py-3 text-base text-white shadow-lg">
+                  <p className="mb-2 rounded-lg bg-[#1F2937] px-4 py-3 text-base text-white shadow-lg">
                     Envie o seu primeiro dado aqui
                   </p>
                   <svg 
-                    className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-gray-800" 
+                    className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[#1F2937]" 
                     fill="currentColor" 
                     height="16" 
                     viewBox="0 0 24 12" 
@@ -144,6 +228,7 @@ const Dashboard = () => {
             </div>
           </div>
         )}
+
       </div>
 
       {/* Bottom Spacer */}
@@ -151,28 +236,37 @@ const Dashboard = () => {
 
       {/* Fixed Bottom Navigation */}
       <footer className="fixed bottom-0 left-0 right-0 z-10">
-        <div className="border-t border-border bg-card/80 backdrop-blur-sm">
+        <div className="border-t border-gray-200 bg-white/80 backdrop-blur-sm">
           <div className="relative flex justify-around p-2">
-            <a className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-muted-foreground" href="#">
+            <button 
+              onClick={() => navigate('/em-breve')}
+              className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-[#4B5563]"
+            >
               <span className="material-symbols-outlined">auto_awesome</span>
               <p className="text-xs font-medium">IA</p>
-            </a>
-            <a className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-muted-foreground" href="#">
+            </button>
+            <button 
+              onClick={() => navigate('/lembretes-pagamento')}
+              className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-[#4B5563]"
+            >
               <span className="material-symbols-outlined">calendar_today</span>
               <p className="text-xs font-medium">Calendário</p>
-            </a>
+            </button>
             <div className="flex-1"></div>
-            <a className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-muted-foreground" href="#">
+            <a className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-[#4B5563]" href="#">
               <span className="material-symbols-outlined">pie_chart</span>
               <p className="text-xs font-medium">Relatórios</p>
             </a>
-            <a className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-muted-foreground" href="#">
+            <a className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-[#4B5563]" href="#">
               <span className="material-symbols-outlined">table_chart</span>
               <p className="text-xs font-medium">Planilha</p>
             </a>
           </div>
           <div className="absolute -top-8 left-1/2 -translate-x-1/2">
-            <button className="flex h-16 w-16 items-center justify-center rounded-full bg-card text-green-500 shadow-lg">
+            <button 
+              onClick={() => navigate('/novo-lancamento')}
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#3ECF8E] shadow-lg"
+            >
               <span className="material-symbols-outlined text-4xl">add</span>
             </button>
           </div>

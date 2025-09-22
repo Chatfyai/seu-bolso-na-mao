@@ -1,45 +1,51 @@
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Plus, Info, X } from "lucide-react";
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
-import { Progress } from "@/components/ui/progress";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Setup = () => {
   const navigate = useNavigate();
-  const [entradas, setEntradas] = useState(['Ex: salário']);
-  const [saidas, setSaidas] = useState(['Ex: aluguel', 'Ex: mercado']);
+  const [entradaInput, setEntradaInput] = useState('');
+  const [saidaInput, setSaidaInput] = useState('');
+  const [entradas, setEntradas] = useState(['Salário', 'Investimentos']);
+  const [saidas, setSaidas] = useState(['Aluguel', 'Supermercado']);
+
+  // Initialize feather icons after component mounts
+  useEffect(() => {
+    // Dynamically load feather icons if available
+    if (window.feather) {
+      window.feather.replace();
+    }
+  }, [entradas, saidas]);
 
   const addEntrada = () => {
-    setEntradas([...entradas, '']);
+    if (entradaInput.trim()) {
+      setEntradas([...entradas, entradaInput.trim()]);
+      setEntradaInput('');
+    }
   };
 
   const addSaida = () => {
-    setSaidas([...saidas, '']);
+    if (saidaInput.trim()) {
+      setSaidas([...saidas, saidaInput.trim()]);
+      setSaidaInput('');
+    }
   };
 
-  const updateEntrada = (index: number, value: string) => {
-    const newEntradas = [...entradas];
-    newEntradas[index] = value;
-    setEntradas(newEntradas);
+  const removeEntrada = (index: number) => {
+    setEntradas(entradas.filter((_, i) => i !== index));
   };
 
-  const updateSaida = (index: number, value: string) => {
-    const newSaidas = [...saidas];
-    newSaidas[index] = value;
-    setSaidas(newSaidas);
+  const removeSaida = (index: number) => {
+    setSaidas(saidas.filter((_, i) => i !== index));
   };
 
-  const deleteEntrada = (index: number) => {
-    const newEntradas = entradas.filter((_, i) => i !== index);
-    setEntradas(newEntradas);
-  };
-
-  const deleteSaida = (index: number) => {
-    const newSaidas = saidas.filter((_, i) => i !== index);
-    setSaidas(newSaidas);
+  const handleKeyPress = (e: React.KeyboardEvent, type: 'entrada' | 'saida') => {
+    if (e.key === 'Enter') {
+      if (type === 'entrada') {
+        addEntrada();
+      } else {
+        addSaida();
+      }
+    }
   };
 
   const handleFinish = () => {
@@ -47,136 +53,125 @@ const Setup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Progress Bar */}
-      <div className="pt-4 pb-8 px-4">
-        <Progress value={50} className="w-full h-2" />
-      </div>
+    <div className="relative min-h-screen bg-white">
+      <header className="bg-transparent px-5 pb-8" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 5px)' }}>
+        <div className="w-full h-1 rounded-full bg-[#e5e7eb] mb-4">
+          <div className="bg-[#3ecf8e] h-1 rounded-full" style={{ width: '60%' }}></div>
+        </div>
+        <h1 className="text-xl font-semibold text-gray-800">Configuração Inicial</h1>
+        <p className="text-sm text-gray-600">Configure suas principais categorias financeiras</p>
+      </header>
 
-      {/* Header Message */}
-      <div className="px-4 mb-8">
-        <h2 className="text-xl text-muted-foreground">
-          Vamos começar...
-        </h2>
-        <p className="text-sm text-muted-foreground mt-2">
-          Para começar vamos adicionar entradas e saídas. Se houver dúvida aperte no ícone I ao lado de entrada e saída.
-        </p>
-      </div>
-
-      {/* Content */}
-      <div className="px-4 space-y-6">
-        {/* Entradas Card */}
-        <Card className="border border-border rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <h3 className="text-xl font-semibold text-foreground">Entradas</h3>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Entradas são todas as fontes de renda, como salário, freelances, vendas, etc.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+      <main className="bg-white px-5 -mt-10 rounded-t-2xl pt-6 pb-28">
+        <div className="space-y-5">
+          <div className="bg-white rounded-xl p-5 card">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                <i className="text-green-500 w-5 h-5" data-feather="trending-up"></i>
+              </div>
+              <h2 className="text-lg font-semibold text-[#1f2937]">Entradas</h2>
             </div>
-            
-            <div className="space-y-3">
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                <i className="text-[#6b7280] w-5 h-5" data-feather="dollar-sign"></i>
+              </span>
+              <input 
+                value={entradaInput}
+                onChange={(e) => setEntradaInput(e.target.value)}
+                onKeyPress={(e) => handleKeyPress(e, 'entrada')}
+                className="w-full h-12 pl-10 pr-4 border-[1.5px] border-[#e5e7eb] rounded-lg focus:outline-none input-focus transition duration-200" 
+                placeholder="Ex: Salário" 
+                type="text"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2 mt-4">
               {entradas.map((entrada, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input
-                    value={entrada}
-                    onChange={(e) => updateEntrada(index, e.target.value)}
-                    className="border-2 border-green-500 rounded-xl bg-background flex-1"
-                    placeholder="Ex: salário"
-                  />
-                  {entradas.length > 1 && (
-                    <Button
-                      onClick={() => deleteEntrada(index)}
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-100 flex-shrink-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  )}
+                <div key={index} className="flex items-center bg-[#e6f7f1] text-[#059669] text-sm font-medium px-3 py-1.5 rounded-md border border-[#a7f3d0]">
+                  <span>{entrada}</span>
+                  <button className="ml-1.5" onClick={() => removeEntrada(index)}>
+                    <i className="w-4 h-4" data-feather="x"></i>
+                  </button>
                 </div>
               ))}
-              
-              <Button 
-                onClick={addEntrada}
-                className="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl h-12 text-base"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Adicionar entrada
-              </Button>
             </div>
-          </CardContent>
-        </Card>
+            <button 
+              onClick={addEntrada}
+              className="w-full h-11 bg-[#3ecf8e] text-white text-sm font-medium rounded-lg mt-4 hover:bg-green-600 transition duration-200"
+            >
+              + Adicionar entrada
+            </button>
+          </div>
 
-        {/* Saídas Card */}
-        <Card className="border border-border rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <h3 className="text-xl font-semibold text-foreground">Saídas</h3>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Saídas são todos os gastos e despesas, como aluguel, mercado, contas, etc.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+          <div className="bg-white rounded-xl p-5 card">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 rounded-full bg-[#FFEAE6] flex items-center justify-center mr-3">
+                <i className="text-[#FF7F6A] w-5 h-5" data-feather="trending-down"></i>
+              </div>
+              <h2 className="text-lg font-semibold text-[#1f2937]">Saídas</h2>
             </div>
-            
-            <div className="space-y-3">
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                <i className="text-[#6b7280] w-5 h-5" data-feather="dollar-sign"></i>
+              </span>
+              <input 
+                value={saidaInput}
+                onChange={(e) => setSaidaInput(e.target.value)}
+                onKeyPress={(e) => handleKeyPress(e, 'saida')}
+                className="w-full h-12 pl-10 pr-4 border-[1.5px] border-[#e5e7eb] rounded-lg focus:outline-none input-focus-red transition duration-200" 
+                placeholder="Ex: Aluguel" 
+                type="text"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2 mt-4">
               {saidas.map((saida, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input
-                    value={saida}
-                    onChange={(e) => updateSaida(index, e.target.value)}
-                    className="border-2 border-red-500 rounded-xl bg-background flex-1"
-                    placeholder="Ex: aluguel"
-                  />
-                  {saidas.length > 1 && (
-                    <Button
-                      onClick={() => deleteSaida(index)}
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-100 flex-shrink-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  )}
+                <div key={index} className="flex items-center bg-[#FFEAE6] text-[#b3594b] text-sm font-medium px-3 py-1.5 rounded-md border border-[#FFD6CF]">
+                  <span>{saida}</span>
+                  <button className="ml-1.5" onClick={() => removeSaida(index)}>
+                    <i className="w-4 h-4" data-feather="x"></i>
+                  </button>
                 </div>
               ))}
-              
-              <Button 
-                onClick={addSaida}
-                className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl h-12 text-base"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Adicionar saída
-              </Button>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <button 
+              onClick={addSaida}
+              className="w-full h-11 bg-[#FF7F6A] text-white text-sm font-medium rounded-lg mt-4 hover:bg-opacity-90 transition duration-200"
+            >
+              + Adicionar saída
+            </button>
+          </div>
 
-      {/* Pronto Button */}
-      <div className="px-4 pb-8 mt-12">
-        <Button 
+          <div className="bg-[#e6f7f1] border-l-4 border-[#3ecf8e] rounded-lg p-4 flex items-start">
+            <div className="flex-shrink-0">
+              <i className="text-[#3ecf8e] w-5 h-5 mt-0.5" data-feather="info"></i>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-gray-700">
+                Você poderá adicionar mais categorias e subcategorias quando finalizar a configuração inicial.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer className="fixed bottom-0 left-0 right-0 p-5 bg-white bg-opacity-80 backdrop-blur-sm border-t border-gray-200">
+        <button 
           onClick={handleFinish}
-          className="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl h-14 text-lg font-medium"
+          className="w-full h-[52px] bg-[#3ecf8e] text-white font-semibold rounded-xl hover:bg-green-600 transition-all duration-300 card"
         >
-          Pronto
-        </Button>
-      </div>
+          Continuar
+        </button>
+      </footer>
     </div>
   );
 };
+
+// Extend Window interface to include feather
+declare global {
+  interface Window {
+    feather?: {
+      replace: () => void;
+    };
+  }
+}
 
 export default Setup;
