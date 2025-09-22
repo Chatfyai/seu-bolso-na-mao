@@ -1,240 +1,178 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { useNavigate } from "react-router-dom";
-import { 
-  User, 
-  Settings, 
-  CreditCard, 
-  Shield, 
-  Bell, 
-  LogOut,
-  Edit,
-  Building,
-  Mail,
-  Phone
-} from "lucide-react";
+import React, { useState } from 'react';
 
 const Profile = () => {
-  const navigate = useNavigate();
-  const [user] = useState({
-    name: "Maria Silva",
-    email: "maria.silva@exemplo.com",
-    phone: "(11) 99999-9999",
-    accountType: "Pessoa Física",
-    memberSince: "Janeiro 2024",
-    avatar: "",
-  });
-
-  const handleLogout = () => {
-    // TODO: Implement logout logic with Supabase
-    navigate("/login");
-  };
+  const [accountType, setAccountType] = useState('Pessoa Física');
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background">
+      <div className="flex-grow">
+        {/* Header */}
+        <header className="bg-green-500 p-4 pb-12 text-white">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-foreground">
-              Perfil
-            </h1>
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className="text-muted-foreground hover:text-destructive"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </Button>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 shrink-0 rounded-full bg-cover bg-center bg-gray-400"></div>
+              <h1 className="text-lg font-bold">Olá, Sofia!</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="flex h-12 w-12 items-center justify-center rounded-full text-white">
+                <span className="material-symbols-outlined">notifications</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Account Type Toggle */}
+        <div className="px-4 -mt-10">
+          <div className="flex h-12 flex-1 items-center justify-center rounded-lg bg-white/20 p-1 backdrop-blur-sm">
+            <label className={`flex h-full flex-1 cursor-pointer items-center justify-center rounded text-sm font-medium ${
+              accountType === 'Pessoa Física' 
+                ? 'bg-white text-green-500 shadow-sm' 
+                : 'text-white/80'
+            }`}>
+              <span className="truncate px-2">Pessoa Física</span>
+              <input 
+                checked={accountType === 'Pessoa Física'}
+                onChange={() => setAccountType('Pessoa Física')}
+                className="sr-only" 
+                name="profile-toggle" 
+                type="radio" 
+                value="Pessoa Física"
+              />
+            </label>
+            <label className={`flex h-full flex-1 cursor-pointer items-center justify-center rounded text-sm font-medium ${
+              accountType === 'Empresa' 
+                ? 'bg-white text-green-500 shadow-sm' 
+                : 'text-white/80'
+            }`}>
+              <span className="truncate px-2">Empresa</span>
+              <input 
+                checked={accountType === 'Empresa'}
+                onChange={() => setAccountType('Empresa')}
+                className="sr-only" 
+                name="profile-toggle" 
+                type="radio" 
+                value="Empresa"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Financial Summary */}
+        <div className="p-4">
+          <h2 className="text-lg font-bold text-foreground">Resumo Financeiro</h2>
+          <div className="mt-2 grid grid-cols-2 gap-4">
+            <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                <span className="material-symbols-outlined text-muted-foreground">trending_up</span>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">Receitas</p>
+              <p className="text-lg font-bold text-foreground">R$ 5.800,00</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                <span className="material-symbols-outlined text-muted-foreground">account_balance_wallet</span>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">Saldo Positivo</p>
+              <p className="text-lg font-bold text-foreground">R$ 3.550,00</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Reminders */}
+        <div className="px-4">
+          <h2 className="py-3 text-lg font-bold text-foreground">Lembretes de Pagamento</h2>
+          <div className="space-y-3">
+            <div className="flex items-center gap-4 rounded-lg border-l-4 border-red-500 bg-red-50 p-3 shadow-sm">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <span className="material-symbols-outlined">home</span>
+              </div>
+              <div className="flex-grow">
+                <p className="font-medium text-foreground">Aluguel</p>
+                <p className="text-sm text-red-600">Vence em 2 dias</p>
+              </div>
+              <p className="font-bold text-red-600">R$ 1.500,00</p>
+            </div>
+            <div className="flex items-center gap-4 rounded-lg border-l-4 border-red-500 bg-red-50 p-3 shadow-sm">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <span className="material-symbols-outlined">wifi</span>
+              </div>
+              <div className="flex-grow">
+                <p className="font-medium text-foreground">Internet</p>
+                <p className="text-sm text-red-600">Vence em 5 dias</p>
+              </div>
+              <p className="font-bold text-red-600">R$ 99,90</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Transactions */}
+        <div className="px-4">
+          <h2 className="py-3 pt-5 text-lg font-bold text-foreground">Lançamentos Recentes</h2>
+          <div className="space-y-2">
+            <div className="flex items-center gap-4 rounded-lg border border-border bg-card p-3 shadow-sm">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <span className="material-symbols-outlined">shopping_cart</span>
+              </div>
+              <div className="flex-grow">
+                <p className="font-medium text-foreground">Supermercado</p>
+                <p className="text-sm text-muted-foreground">Hoje</p>
+              </div>
+              <p className="font-medium text-red-600">- R$ 254,80</p>
+            </div>
+            <div className="flex items-center gap-4 rounded-lg border border-border bg-card p-3 shadow-sm">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <span className="material-symbols-outlined">restaurant</span>
+              </div>
+              <div className="flex-grow">
+                <p className="font-medium text-foreground">Restaurante</p>
+                <p className="text-sm text-muted-foreground">Ontem</p>
+              </div>
+              <p className="font-medium text-red-600">- R$ 75,50</p>
+            </div>
+            <div className="flex items-center gap-4 rounded-lg border border-border bg-card p-3 shadow-sm">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <span className="material-symbols-outlined">arrow_upward</span>
+              </div>
+              <div className="flex-grow">
+                <p className="font-medium text-foreground">Salário</p>
+                <p className="text-sm text-muted-foreground">Ontem</p>
+              </div>
+              <p className="font-medium text-green-500">+ R$ 5.800,00</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto grid gap-8 lg:grid-cols-3">
-          {/* Profile Summary */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader className="text-center pb-2">
-                <Avatar className="h-24 w-24 mx-auto mb-4">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                    {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <CardTitle className="text-xl">{user.name}</CardTitle>
-                <CardDescription>{user.email}</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-3">
-                  <div className="flex justify-center">
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">
-                      {user.accountType}
-                    </Badge>
-                  </div>
-                  <Separator />
-                  <div className="text-center text-sm text-muted-foreground">
-                    Membro desde {user.memberSince}
-                  </div>
-                  <Button variant="outline" className="w-full">
-                    <Edit className="mr-2 h-4 w-4" />
-                    Editar Perfil
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Bottom Spacer */}
+      <div className="h-24"></div>
 
-            {/* Quick Actions */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="text-lg">Ações Rápidas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start">
-                  <CreditCard className="mr-3 h-4 w-4" />
-                  Gerenciar Cartões
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <Settings className="mr-3 h-4 w-4" />
-                  Configurações
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <Shield className="mr-3 h-4 w-4" />
-                  Segurança
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <Bell className="mr-3 h-4 w-4" />
-                  Notificações
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Profile Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Personal Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <User className="mr-2 h-5 w-5" />
-                  Informações Pessoais
-                </CardTitle>
-                <CardDescription>
-                  Gerencie suas informações pessoais
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Nome Completo
-                    </label>
-                    <div className="flex items-center p-3 border rounded-md bg-muted/30">
-                      <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span>{user.name}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Tipo de Conta
-                    </label>
-                    <div className="flex items-center p-3 border rounded-md bg-muted/30">
-                      <Building className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span>{user.accountType}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
-                      E-mail
-                    </label>
-                    <div className="flex items-center p-3 border rounded-md bg-muted/30">
-                      <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span>{user.email}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Telefone
-                    </label>
-                    <div className="flex items-center p-3 border rounded-md bg-muted/30">
-                      <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span>{user.phone}</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Account Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="mr-2 h-5 w-5" />
-                  Configurações da Conta
-                </CardTitle>
-                <CardDescription>
-                  Personalize sua experiência
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <h4 className="font-medium">Notificações por E-mail</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Receba atualizações sobre suas finanças
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Configurar
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <h4 className="font-medium">Autenticação em Dois Fatores</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Adicione uma camada extra de segurança
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Ativar
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <h4 className="font-medium">Backup de Dados</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Mantenha suas informações seguras
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Configurar
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Danger Zone */}
-            <Card className="border-destructive/20">
-              <CardHeader>
-                <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
-                <CardDescription>
-                  Ações irreversíveis em sua conta
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="destructive" className="w-full">
-                  Excluir Conta Permanentemente
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+      {/* Fixed Bottom Navigation */}
+      <footer className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/80 backdrop-blur-sm">
+        <div className="relative flex justify-around p-2">
+          <a className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-muted-foreground" href="#">
+            <span className="material-symbols-outlined">auto_awesome</span>
+            <p className="text-xs font-medium">IA</p>
+          </a>
+          <a className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-muted-foreground" href="#">
+            <span className="material-symbols-outlined">calendar_today</span>
+            <p className="text-xs font-medium">Calendário</p>
+          </a>
+          <div className="flex-1"></div>
+          <a className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-muted-foreground" href="#">
+            <span className="material-symbols-outlined">pie_chart</span>
+            <p className="text-xs font-medium">Relatórios</p>
+          </a>
+          <a className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-muted-foreground" href="#">
+            <span className="material-symbols-outlined">table_chart</span>
+            <p className="text-xs font-medium">Planilha</p>
+          </a>
         </div>
-      </div>
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2">
+          <button className="flex h-16 w-16 items-center justify-center rounded-full bg-card text-green-500 shadow-lg">
+            <span className="material-symbols-outlined text-4xl">add</span>
+          </button>
+        </div>
+      </footer>
     </div>
   );
 };
