@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import LembretesPagamento from './LembretesPagamento';
+import EmBreve from './EmBreve';
+import EmBreveEmpresa from './EmBreveEmpresa';
+import CountUp from './CountUp';
+import NovoLancamento from './NovoLancamento';
+import UltimosLancamentos from './UltimosLancamentos';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -7,6 +15,14 @@ const Dashboard = () => {
   const [showTutorial, setShowTutorial] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  type PanelType = 'ia' | 'calendario' | 'relatorios' | 'planilha' | 'empresa' | 'novo' | 'ultimos' | null;
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState<PanelType>(null);
+  type HeaderPanelType = 'profile' | 'settings' | 'help' | null;
+  const [isHeaderSheetOpen, setIsHeaderSheetOpen] = useState(false);
+  const [activeHeaderPanel, setActiveHeaderPanel] = useState<HeaderPanelType>(null);
+  type TimeGranularity = 'D' | 'M' | 'A';
+  const [timeGranularity, setTimeGranularity] = useState<TimeGranularity>('M');
 
   const handleCloseTutorial = () => {
     setShowTutorial(false);
@@ -37,16 +53,16 @@ const Dashboard = () => {
     setShowMenu(false);
     switch (action) {
       case 'profile':
-        // TODO: Navigate to profile page when implemented
-        console.log('Perfil em desenvolvimento');
+        setActiveHeaderPanel('profile');
+        setIsHeaderSheetOpen(true);
         break;
       case 'settings':
-        // TODO: Navigate to settings page
-        console.log('Configurações');
+        setActiveHeaderPanel('settings');
+        setIsHeaderSheetOpen(true);
         break;
       case 'help':
-        // TODO: Navigate to help page
-        console.log('Ajuda');
+        setActiveHeaderPanel('help');
+        setIsHeaderSheetOpen(true);
         break;
       case 'logout':
         // TODO: Implement logout
@@ -56,6 +72,45 @@ const Dashboard = () => {
         break;
     }
   };
+
+  const openPanel = (panel: Exclude<PanelType, null>) => {
+    setActivePanel(panel);
+    setIsSheetOpen(true);
+  };
+
+  const panelTitle = (() => {
+    switch (activePanel) {
+      case 'ia':
+        return 'IA';
+      case 'calendario':
+        return 'Calendário';
+      case 'relatorios':
+        return 'Relatórios';
+      case 'planilha':
+        return 'Planilha';
+      case 'novo':
+        return 'Novo Lançamento';
+      case 'empresa':
+        return 'Empresa';
+      case 'ultimos':
+        return 'Últimos lançamentos';
+      default:
+        return '';
+    }
+  })();
+
+  const headerPanelTitle = (() => {
+    switch (activeHeaderPanel) {
+      case 'profile':
+        return 'Perfil';
+      case 'settings':
+        return 'Configurações';
+      case 'help':
+        return 'Ajuda';
+      default:
+        return '';
+    }
+  })();
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background">
@@ -131,7 +186,7 @@ const Dashboard = () => {
                 value="Pessoa Física"
               />
             </label>
-            <label className={`flex h-full flex-1 cursor-pointer items-center justify-center rounded text-sm font-medium ${
+            <label onClick={() => openPanel('empresa')} className={`flex h-full flex-1 cursor-pointer items-center justify-center rounded text-sm font-medium ${
               accountType === 'Empresa' 
                 ? 'bg-white text-green-500 shadow-sm' 
                 : 'text-white/80'
@@ -151,7 +206,42 @@ const Dashboard = () => {
 
         {/* Financial Summary - Empty State */}
         <div className="p-4">
-          <h2 className="text-lg font-bold text-foreground">Resumo Financeiro</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-foreground">Resumo Financeiro</h2>
+            <ToggleGroup
+              type="single"
+              size="sm"
+              value={timeGranularity}
+              onValueChange={(val) => {
+                if (val === 'D' || val === 'M' || val === 'A') {
+                  setTimeGranularity(val);
+                }
+              }}
+              aria-label="Selecionar período"
+            >
+              <ToggleGroupItem
+                value="D"
+                aria-label="Dia"
+                className="rounded-full w-9 h-9 p-0 text-sm font-semibold text-[#3ecf8e] data-[state=on]:bg-[#3ecf8e] data-[state=on]:text-white"
+              >
+                D
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="M"
+                aria-label="Mês"
+                className="rounded-full w-9 h-9 p-0 text-sm font-semibold text-[#3ecf8e] data-[state=on]:bg-[#3ecf8e] data-[state=on]:text-white"
+              >
+                M
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="A"
+                aria-label="Ano"
+                className="rounded-full w-9 h-9 p-0 text-sm font-semibold text-[#3ecf8e] data-[state=on]:bg-[#3ecf8e] data-[state=on]:text-white"
+              >
+                A
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
           <div className="mt-2 grid grid-cols-2 gap-4">
             <div className="rounded-lg border border-border bg-card p-4 shadow-sm flex flex-col justify-between min-h-[120px]">
               <div>
@@ -159,7 +249,9 @@ const Dashboard = () => {
                   <span className="material-symbols-outlined text-muted-foreground">trending_up</span>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">Receitas</p>
-                <p className="text-lg font-bold text-foreground">R$ 0,00</p>
+                <p className="text-lg font-bold text-foreground">
+                  R$ <CountUp from={0} to={0} separator="." duration={1} className="inline" />
+                </p>
               </div>
               <div className="mt-2 text-center">
                 <p className="text-xs text-muted-foreground">Nenhum dado ainda.</p>
@@ -171,7 +263,9 @@ const Dashboard = () => {
                   <span className="material-symbols-outlined text-muted-foreground">account_balance_wallet</span>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">Saldo Positivo</p>
-                <p className="text-lg font-bold text-foreground">R$ 0,00</p>
+                <p className="text-lg font-bold text-foreground">
+                  R$ <CountUp from={0} to={0} separator="." duration={1} className="inline" />
+                </p>
               </div>
               <div className="mt-2 flex items-center justify-center">
                 <span className="material-symbols-outlined text-gray-300">add_chart</span>
@@ -210,11 +304,11 @@ const Dashboard = () => {
             <div className="relative flex w-full flex-col items-center justify-end" style={{marginBottom: '9rem'}}>
               <div className="relative mb-4 flex w-full justify-center">
                 <div className="relative">
-                  <p className="mb-2 rounded-lg bg-[#1F2937] px-4 py-3 text-base text-white shadow-lg">
+                  <p className="mb-2 rounded-lg bg-[#3ecf8e] px-4 py-3 text-base text-white shadow-lg">
                     Envie o seu primeiro dado aqui
                   </p>
                   <svg 
-                    className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[#1F2937]" 
+                    className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[#3ecf8e]" 
                     fill="currentColor" 
                     height="16" 
                     viewBox="0 0 24 12" 
@@ -239,32 +333,32 @@ const Dashboard = () => {
         <div className="border-t border-gray-200 bg-white/80 backdrop-blur-sm">
           <div className="relative flex justify-around p-2">
             <button 
-              onClick={() => navigate('/em-breve')}
+              onClick={() => openPanel('ia')}
               className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-[#4B5563]"
             >
               <span className="material-symbols-outlined">auto_awesome</span>
               <p className="text-xs font-medium">IA</p>
             </button>
             <button 
-              onClick={() => navigate('/lembretes-pagamento')}
+              onClick={() => openPanel('calendario')}
               className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-[#4B5563]"
             >
               <span className="material-symbols-outlined">calendar_today</span>
               <p className="text-xs font-medium">Calendário</p>
             </button>
             <div className="flex-1"></div>
-            <a className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-[#4B5563]" href="#">
+            <button className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-[#4B5563]" onClick={() => openPanel('relatorios')}>
               <span className="material-symbols-outlined">pie_chart</span>
               <p className="text-xs font-medium">Relatórios</p>
-            </a>
-            <a className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-[#4B5563]" href="#">
-              <span className="material-symbols-outlined">table_chart</span>
-              <p className="text-xs font-medium">Planilha</p>
-            </a>
+            </button>
+            <button className="flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-2 text-[#4B5563]" onClick={() => openPanel('ultimos')}>
+              <span className="material-symbols-outlined">history</span>
+              <p className="text-xs font-medium">Últimos</p>
+            </button>
           </div>
           <div className="absolute -top-8 left-1/2 -translate-x-1/2">
             <button 
-              onClick={() => navigate('/novo-lancamento')}
+              onClick={() => openPanel('novo')}
               className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#3ECF8E] shadow-lg"
             >
               <span className="material-symbols-outlined text-4xl">add</span>
@@ -272,6 +366,76 @@ const Dashboard = () => {
           </div>
         </div>
       </footer>
+
+      {/* Full-screen bottom-up sliding panel */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent side="bottom" className="p-0 h-screen">
+          <div className="flex flex-col h-full">
+            <div className="bg-background border-b">
+              <div className="px-5 h-14 flex items-center justify-between">
+                <h2 className="text-base font-semibold text-foreground">{panelTitle}</h2>
+                <button 
+                  onClick={() => setIsSheetOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <span className="material-symbols-outlined text-gray-500">close</span>
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+            {activePanel === 'ia' && (
+              <EmBreve embedded onClose={() => setIsSheetOpen(false)} />
+            )}
+            {activePanel === 'calendario' && (
+              <LembretesPagamento embedded onClose={() => setIsSheetOpen(false)} />
+            )}
+            {activePanel === 'relatorios' && (
+              <div className="px-5 py-4 text-sm text-muted-foreground">
+                Relatórios de desempenho financeiro aparecerão aqui.
+              </div>
+            )}
+            {activePanel === 'planilha' && (
+              <div className="px-5 py-4 text-sm text-muted-foreground">
+                Visualização tipo planilha aparecerá aqui.
+              </div>
+            )}
+            {activePanel === 'novo' && (
+              <NovoLancamento embedded onClose={() => setIsSheetOpen(false)} />
+            )}
+              {activePanel === 'empresa' && (
+                <EmBreveEmpresa embedded onClose={() => setIsSheetOpen(false)} />
+              )}
+            {activePanel === 'ultimos' && (
+              <UltimosLancamentos 
+                embedded 
+                onClose={() => setIsSheetOpen(false)} 
+                onOpenNovo={() => {
+                  setActivePanel('novo');
+                  // Não fechamos o sheet atual, apenas mudamos o painel
+                }}
+              />
+            )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Right-side sliding panel for header menu */}
+      <Sheet open={isHeaderSheetOpen} onOpenChange={setIsHeaderSheetOpen}>
+        <SheetContent side="right" className="p-0 h-screen w-full sm:max-w-none max-w-none">
+          <div className="flex flex-col h-full">
+            <div className="bg-background border-b">
+              <div className="px-5 h-14 flex items-center">
+                <h2 className="text-base font-semibold text-foreground">{headerPanelTitle}</h2>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {/* Placeholder content until pages are implemented */}
+              <EmBreve embedded onClose={() => setIsHeaderSheetOpen(false)} />
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

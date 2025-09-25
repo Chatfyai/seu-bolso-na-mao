@@ -1,13 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, X } from 'lucide-react';
+import { Briefcase, X } from 'lucide-react';
 
-type EmBreveProps = {
+type EmBreveEmpresaProps = {
   embedded?: boolean;
   onClose?: () => void;
 };
 
-const EmBreve = ({ embedded = false, onClose }: EmBreveProps) => {
+const EmBreveEmpresa = ({ embedded = false, onClose }: EmBreveEmpresaProps) => {
   const navigate = useNavigate();
 
   const handleClose = () => {
@@ -35,13 +35,15 @@ const EmBreve = ({ embedded = false, onClose }: EmBreveProps) => {
       {/* Main Content */}
       <main className="flex-grow flex flex-col items-center justify-center text-center px-6">
         <div className="text-[#24e08b] mb-6">
-          <Clock className="w-16 h-16" />
+          <Briefcase className="w-16 h-16" />
         </div>
         <h1 className="text-5xl font-extrabold text-[#24e08b] mb-4">Em Breve</h1>
-        <p className="text-lg text-black/60">Estamos trabalhando para trazer novidades!</p>
+        <p className="text-lg text-black/60">Recursos para Empresas estarão disponíveis em breve.</p>
       </main>
     </div>
   );
 };
 
-export default EmBreve;
+export default EmBreveEmpresa;
+
+

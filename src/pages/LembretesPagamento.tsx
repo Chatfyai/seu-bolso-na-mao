@@ -2,11 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ArrowRight, Calendar } from 'lucide-react';
 
-const LembretesPagamento = () => {
+type LembretesPagamentoProps = {
+  embedded?: boolean;
+  onClose?: () => void;
+};
+
+const LembretesPagamento = ({ embedded = false, onClose }: LembretesPagamentoProps) => {
   const navigate = useNavigate();
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [installments, setInstallments] = useState('Pagamento único');
+  const [installments, setInstallments] = useState('1');
   const [paymentDate, setPaymentDate] = useState('');
   const [repetition, setRepetition] = useState('monthly');
 
@@ -14,28 +19,38 @@ const LembretesPagamento = () => {
     e.preventDefault();
     // TODO: Implement reminder creation logic
     console.log('Novo lembrete:', { description, amount, installments, paymentDate, repetition });
-    navigate('/dashboard');
+    if (embedded && onClose) {
+      onClose();
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const handleClose = () => {
-    navigate('/dashboard');
+    if (embedded && onClose) {
+      onClose();
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className={"flex flex-col bg-white " + (embedded ? '' : 'min-h-screen')}>
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
+      <header className={"bg-white shadow-sm " + (embedded ? '' : 'sticky top-0 z-10')}>
         <div className="mx-auto max-w-md relative">
           <div className="flex items-center justify-center p-4">
             <h1 className="text-xl font-semibold text-[#1f2937] text-center">
               Salvar Lembrete de Pagamento
             </h1>
-            <button 
-              onClick={handleClose}
-              className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <X className="h-5 w-5 text-gray-600" />
-            </button>
+            {!embedded && (
+              <button 
+                onClick={handleClose}
+                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -85,26 +100,25 @@ const LembretesPagamento = () => {
           {/* Parcelamento */}
           <div>
             <label className="text-sm font-medium text-gray-700 mb-2 block" htmlFor="installments">
-              Parcelamento
+              Parcelamento (nº de parcelas)
             </label>
-            <div className="relative">
-              <select
-                className="w-full h-[52px] bg-white text-gray-900 border-[1.5px] border-gray-200 rounded-lg appearance-none pl-4 pr-10 focus:border-[#3ecf8e] focus:ring-1 focus:ring-[#3ecf8e] transition-all duration-300 form-select"
+            <div className="relative flex items-center border-[1.5px] border-gray-200 rounded-lg h-[52px] focus-within:border-[#3ecf8e] focus-within:ring-1 focus-within:ring-[#3ecf8e] transition-all duration-300">
+              <input
+                className="w-full h-full bg-transparent text-gray-900 placeholder:text-gray-400 border-none rounded-lg pl-4 pr-4 focus:ring-0 focus:outline-none"
                 id="installments"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                step={1}
+                placeholder="Ex.: 12"
                 value={installments}
-                onChange={(e) => setInstallments(e.target.value)}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                  backgroundPosition: 'right 0.5rem center',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundSize: '1.5em 1.5em',
-                  paddingRight: '2.5rem'
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || Number(val) >= 1) {
+                    setInstallments(val);
+                  }
                 }}
-              >
-                <option>Pagamento único</option>
-                <option>2 Parcelas</option>
-                <option>3 Parcelas</option>
-              </select>
+              />
             </div>
           </div>
 

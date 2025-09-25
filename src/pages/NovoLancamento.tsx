@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, ChevronDown, Edit3, DollarSign, X } from 'lucide-react';
 
-const NovoLancamento = () => {
+type NovoLancamentoProps = {
+  embedded?: boolean;
+  onClose?: () => void;
+};
+
+const NovoLancamento = ({ embedded = false, onClose }: NovoLancamentoProps) => {
   const navigate = useNavigate();
   const [tipoTransacao, setTipoTransacao] = useState('entrada');
   const [data, setData] = useState('');
@@ -14,24 +19,34 @@ const NovoLancamento = () => {
     e.preventDefault();
     // TODO: Implement transaction creation logic
     console.log('Nova transação:', { tipoTransacao, data, grupo, descricao, valor });
-    navigate('/dashboard');
+    if (embedded && onClose) {
+      onClose();
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const handleClose = () => {
-    navigate('/dashboard');
+    if (embedded && onClose) {
+      onClose();
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   return (
-    <div className="flex flex-col h-full min-h-screen max-w-md mx-auto bg-white">
+    <div className={"flex flex-col h-full max-w-md mx-auto bg-white " + (embedded ? '' : 'min-h-screen')}>
       {/* Header */}
       <header className="pt-8 pb-4 px-6 text-center relative">
         <h1 className="text-[1.375rem] font-semibold text-[#1f2937]">Novo Lançamento</h1>
-        <button 
-          onClick={handleClose}
-          className="absolute right-6 top-8 flex h-10 w-10 items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
-        >
-          <X className="h-5 w-5 text-gray-600" />
-        </button>
+        {!embedded && (
+          <button 
+            onClick={handleClose}
+            className="absolute right-6 top-8 flex h-10 w-10 items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
+        )}
       </header>
 
       {/* Main Content */}

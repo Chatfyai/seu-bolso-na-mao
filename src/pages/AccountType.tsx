@@ -81,21 +81,12 @@ const AccountType = () => {
               </div>
             </div>
           </div>
+
+          {/* Texto informativo com espaçamento considerável */}
+          <p className="text-center text-sm text-gray-500 mt-8">Você pode alterar essa configuração a qualquer momento.</p>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="flex-shrink-0 bg-white p-6">
-        <div className="max-w-md mx-auto space-y-4">
-          <p className="text-center text-sm text-gray-500">Você pode alterar essa configuração a qualquer momento.</p>
-          <button 
-            onClick={handlePersonalAccount}
-            className="w-full bg-[#3ecf8e] text-white font-bold py-4 rounded-xl shadow-lg shadow-green-500/20 hover:bg-green-600 transition-all duration-300"
-          >
-            Continuar
-          </button>
-        </div>
-      </footer>
+      
     </div>
   );
 };
