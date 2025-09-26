@@ -1,23 +1,111 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/account-type");
+      }
+    };
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        navigate("/account-type");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual login logic with Supabase
-    console.log("Login attempt:", { email, password, rememberMe });
-    navigate("/account-type");
+    setIsLoading(true);
+
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/account-type`
+          }
+        });
+
+        if (error) {
+          toast({
+            title: "Erro no cadastro",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Cadastro realizado",
+            description: "Verifique seu email para confirmar a conta.",
+          });
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          toast({
+            title: "Erro no login",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    // TODO: Implement Google OAuth with Supabase
-    console.log("Google login attempt");
-    navigate("/account-type");
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/account-type`
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Erro no login com Google",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -26,14 +114,14 @@ const Login = () => {
         <div className="w-full max-w-sm">
            <header className="text-left mb-8">
              <h1 className="text-3xl font-bold text-[#1a202c] tracking-tight" style={{fontSize: '28px'}}>
-               Bem-vindo ao Finance
+               {isSignUp ? "Criar conta" : "Bem-vindo ao Finance"}
              </h1>
              <p className="mt-2 text-base text-[#4a5568]">
-               Acesse sua conta para continuar
+               {isSignUp ? "Crie sua conta para começar" : "Acesse sua conta para continuar"}
              </p>
            </header>
           
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleEmailAuth} className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-[#2d3748]">
                 E-mail
@@ -101,9 +189,10 @@ const Login = () => {
             <div>
               <button
                 type="submit"
-                className="flex w-full justify-center items-center text-white btn-primary font-semibold text-base"
+                disabled={isLoading}
+                className="flex w-full justify-center items-center text-white btn-primary font-semibold text-base disabled:opacity-50"
               >
-                Entrar
+                {isLoading ? "Carregando..." : (isSignUp ? "Criar conta" : "Entrar")}
               </button>
             </div>
           </form>
@@ -134,12 +223,13 @@ const Login = () => {
           </div>
 
           <p className="mt-8 text-center text-sm text-[#718096]">
-            Não tem uma conta?{" "}
+            {isSignUp ? "Já tem uma conta?" : "Não tem uma conta?"}{" "}
             <button
               type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
               className="font-semibold leading-6 text-[#3ecf8e] hover:text-[#2f855a]"
             >
-              Criar nova conta
+              {isSignUp ? "Fazer login" : "Criar nova conta"}
             </button>
           </p>
         </div>
