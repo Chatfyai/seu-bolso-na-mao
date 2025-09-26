@@ -1,11 +1,59 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const AccountType = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handlePersonalAccount = () => {
-    // TODO: Implement account type selection logic with Supabase
-    navigate("/setup");
+  const handlePersonalAccount = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Erro de autenticação",
+          description: "Você precisa estar logado para continuar.",
+        });
+        navigate("/login");
+        return;
+      }
+
+      // Create or update user profile
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({ 
+          user_id: user.id, 
+          account_type: 'personal' 
+        });
+
+      if (error) throw error;
+
+      // Create default categories for the user
+      const { error: categoriesError } = await supabase
+        .rpc('create_default_categories', { user_id: user.id });
+
+      if (categoriesError) throw categoriesError;
+
+      toast({
+        title: "Conta configurada!",
+        description: "Tipo de conta salvo com sucesso.",
+      });
+
+      navigate("/setup");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar",
+        description: error.message || "Tente novamente.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBusinessAccount = () => {
@@ -38,7 +86,7 @@ const AccountType = () => {
           {/* Pessoa Física */}
           <div 
             onClick={handlePersonalAccount}
-            className="bg-white rounded-2xl border-l-4 border-[#3ecf8e] shadow-xl transition-transform duration-300 ease-in-out hover:scale-[1.02] cursor-pointer"
+            className={`bg-white rounded-2xl border-l-4 border-[#3ecf8e] shadow-xl transition-transform duration-300 ease-in-out hover:scale-[1.02] ${loading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
           >
             <div className="flex items-center gap-4 p-4">
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-green-100">

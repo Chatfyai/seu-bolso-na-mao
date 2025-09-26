@@ -1,50 +1,214 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Setup = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   type Categoria = { label: string; color: string };
   const [entradaInput, setEntradaInput] = useState('');
   const [saidaInput, setSaidaInput] = useState('');
   const [entradaColor, setEntradaColor] = useState('#3ecf8e');
   const [saidaColor, setSaidaColor] = useState('#FF7F6A');
-  const [entradas, setEntradas] = useState<Categoria[]>([
-    { label: 'Salário', color: '#3ecf8e' },
-    { label: 'Investimentos', color: '#3ecf8e' },
-  ]);
-  const [saidas, setSaidas] = useState<Categoria[]>([
-    { label: 'Aluguel', color: '#FF7F6A' },
-    { label: 'Supermercado', color: '#FF7F6A' },
-  ]);
+  const [entradas, setEntradas] = useState<Categoria[]>([]);
+  const [saidas, setSaidas] = useState<Categoria[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
 
-  // Initialize feather icons after component mounts
+  // Load user categories and initialize feather icons
   useEffect(() => {
+    loadUserCategories();
     // Dynamically load feather icons if available
+    if (window.feather) {
+      window.feather.replace();
+    }
+  }, []);
+
+  useEffect(() => {
     if (window.feather) {
       window.feather.replace();
     }
   }, [entradas, saidas]);
 
-  const addEntrada = () => {
+  const loadUserCategories = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
+      const { data: categories, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      const entradasFromDb = categories?.filter(cat => cat.type === 'entrada') || [];
+      const saidasFromDb = categories?.filter(cat => cat.type === 'saida') || [];
+
+      setEntradas(entradasFromDb.map(cat => ({ label: cat.name, color: cat.color })));
+      setSaidas(saidasFromDb.map(cat => ({ label: cat.name, color: cat.color })));
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar categorias",
+        description: error.message || "Tente novamente.",
+      });
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const addEntrada = async () => {
     if (entradaInput.trim()) {
-      setEntradas([...entradas, { label: entradaInput.trim(), color: entradaColor }]);
-      setEntradaInput('');
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          navigate("/login");
+          return;
+        }
+
+        const { error } = await supabase
+          .from('categories')
+          .insert({
+            user_id: user.id,
+            name: entradaInput.trim(),
+            type: 'entrada',
+            color: entradaColor,
+            is_default: false
+          });
+
+        if (error) throw error;
+
+        setEntradas([...entradas, { label: entradaInput.trim(), color: entradaColor }]);
+        setEntradaInput('');
+        
+        toast({
+          title: "Categoria adicionada!",
+          description: "Nova categoria de entrada criada.",
+        });
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao adicionar categoria",
+          description: error.message || "Tente novamente.",
+        });
+      }
     }
   };
 
-  const addSaida = () => {
+  const addSaida = async () => {
     if (saidaInput.trim()) {
-      setSaidas([...saidas, { label: saidaInput.trim(), color: saidaColor }]);
-      setSaidaInput('');
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          navigate("/login");
+          return;
+        }
+
+        const { error } = await supabase
+          .from('categories')
+          .insert({
+            user_id: user.id,
+            name: saidaInput.trim(),
+            type: 'saida',
+            color: saidaColor,
+            is_default: false
+          });
+
+        if (error) throw error;
+
+        setSaidas([...saidas, { label: saidaInput.trim(), color: saidaColor }]);
+        setSaidaInput('');
+        
+        toast({
+          title: "Categoria adicionada!",
+          description: "Nova categoria de saída criada.",
+        });
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao adicionar categoria",
+          description: error.message || "Tente novamente.",
+        });
+      }
     }
   };
 
-  const removeEntrada = (index: number) => {
-    setEntradas(entradas.filter((_, i) => i !== index));
+  const removeEntrada = async (index: number) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
+      const categoria = entradas[index];
+      
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('name', categoria.label)
+        .eq('type', 'entrada');
+
+      if (error) throw error;
+
+      setEntradas(entradas.filter((_, i) => i !== index));
+      
+      toast({
+        title: "Categoria removida!",
+        description: "Categoria de entrada excluída.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao remover categoria",
+        description: error.message || "Tente novamente.",
+      });
+    }
   };
 
-  const removeSaida = (index: number) => {
-    setSaidas(saidas.filter((_, i) => i !== index));
+  const removeSaida = async (index: number) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
+      const categoria = saidas[index];
+      
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('name', categoria.label)
+        .eq('type', 'saida');
+
+      if (error) throw error;
+
+      setSaidas(saidas.filter((_, i) => i !== index));
+      
+      toast({
+        title: "Categoria removida!",
+        description: "Categoria de saída excluída.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao remover categoria",
+        description: error.message || "Tente novamente.",
+      });
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent, type: 'entrada' | 'saida') => {
@@ -57,9 +221,26 @@ const Setup = () => {
     }
   };
 
-  const handleFinish = () => {
-    navigate('/chart-preference');
+  const handleFinish = async () => {
+    setLoading(true);
+    try {
+      // All categories are already saved, just navigate
+      navigate('/chart-preference');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loadingData) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#3ecf8e]"></div>
+          <p className="mt-4 text-gray-600">Carregando suas categorias...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-white">
@@ -213,9 +394,10 @@ const Setup = () => {
       <footer className="fixed bottom-0 left-0 right-0 p-5 bg-white bg-opacity-80 backdrop-blur-sm border-t border-gray-200">
         <button 
           onClick={handleFinish}
-          className="w-full h-[52px] bg-[#3ecf8e] text-white font-semibold rounded-xl hover:bg-green-600 transition-all duration-300 card"
+          disabled={loading}
+          className={`w-full h-[52px] bg-[#3ecf8e] text-white font-semibold rounded-xl hover:bg-green-600 transition-all duration-300 card ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
-          Continuar
+          {loading ? 'Salvando...' : 'Continuar'}
         </button>
       </footer>
     </div>
