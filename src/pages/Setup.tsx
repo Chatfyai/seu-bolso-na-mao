@@ -3,10 +3,19 @@ import { useNavigate } from "react-router-dom";
 
 const Setup = () => {
   const navigate = useNavigate();
+  type Categoria = { label: string; color: string };
   const [entradaInput, setEntradaInput] = useState('');
   const [saidaInput, setSaidaInput] = useState('');
-  const [entradas, setEntradas] = useState(['Salário', 'Investimentos']);
-  const [saidas, setSaidas] = useState(['Aluguel', 'Supermercado']);
+  const [entradaColor, setEntradaColor] = useState('#3ecf8e');
+  const [saidaColor, setSaidaColor] = useState('#FF7F6A');
+  const [entradas, setEntradas] = useState<Categoria[]>([
+    { label: 'Salário', color: '#3ecf8e' },
+    { label: 'Investimentos', color: '#3ecf8e' },
+  ]);
+  const [saidas, setSaidas] = useState<Categoria[]>([
+    { label: 'Aluguel', color: '#FF7F6A' },
+    { label: 'Supermercado', color: '#FF7F6A' },
+  ]);
 
   // Initialize feather icons after component mounts
   useEffect(() => {
@@ -18,14 +27,14 @@ const Setup = () => {
 
   const addEntrada = () => {
     if (entradaInput.trim()) {
-      setEntradas([...entradas, entradaInput.trim()]);
+      setEntradas([...entradas, { label: entradaInput.trim(), color: entradaColor }]);
       setEntradaInput('');
     }
   };
 
   const addSaida = () => {
     if (saidaInput.trim()) {
-      setSaidas([...saidas, saidaInput.trim()]);
+      setSaidas([...saidas, { label: saidaInput.trim(), color: saidaColor }]);
       setSaidaInput('');
     }
   };
@@ -79,15 +88,39 @@ const Setup = () => {
                 value={entradaInput}
                 onChange={(e) => setEntradaInput(e.target.value)}
                 onKeyPress={(e) => handleKeyPress(e, 'entrada')}
-                className="w-full h-12 pl-10 pr-4 border-[1.5px] border-[#e5e7eb] rounded-lg focus:outline-none input-focus transition duration-200" 
+                className="w-full h-12 pl-10 pr-14 border-[1.5px] border-[#e5e7eb] rounded-lg focus:outline-none input-focus transition duration-200" 
                 placeholder="Ex: Salário" 
                 type="text"
               />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                <div className="relative w-8 h-8 rounded-md border border-[#e2e8f0] shadow-sm overflow-hidden" style={{ backgroundColor: entradaColor }}>
+                  <input
+                    aria-label="Escolher cor de entrada"
+                    type="color"
+                    value={entradaColor}
+                    onChange={(e) => setEntradaColor(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="mt-2 inline-flex items-center gap-2 text-xs text-gray-600">
+              <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: entradaColor }}></span>
+              <span>{entradaColor}</span>
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
               {entradas.map((entrada, index) => (
-                <div key={index} className="flex items-center bg-[#e6f7f1] text-[#059669] text-sm font-medium px-3 py-1.5 rounded-md border border-[#a7f3d0]">
-                  <span>{entrada}</span>
+                <div
+                  key={index}
+                  className="flex items-center text-sm font-medium px-3 py-1.5 rounded-md border"
+                  style={{
+                    backgroundColor: `${entrada.color}1A`,
+                    borderColor: `${entrada.color}33`,
+                    color: entrada.color,
+                  }}
+                >
+                  <span className="inline-block w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: entrada.color }}></span>
+                  <span>{entrada.label}</span>
                   <button className="ml-1.5" onClick={() => removeEntrada(index)}>
                     <i className="w-4 h-4" data-feather="x"></i>
                   </button>
@@ -117,15 +150,39 @@ const Setup = () => {
                 value={saidaInput}
                 onChange={(e) => setSaidaInput(e.target.value)}
                 onKeyPress={(e) => handleKeyPress(e, 'saida')}
-                className="w-full h-12 pl-10 pr-4 border-[1.5px] border-[#e5e7eb] rounded-lg focus:outline-none input-focus-red transition duration-200" 
+                className="w-full h-12 pl-10 pr-14 border-[1.5px] border-[#e5e7eb] rounded-lg focus:outline-none input-focus-red transition duration-200" 
                 placeholder="Ex: Aluguel" 
                 type="text"
               />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                <div className="relative w-8 h-8 rounded-md border border-[#e2e8f0] shadow-sm overflow-hidden" style={{ backgroundColor: saidaColor }}>
+                  <input
+                    aria-label="Escolher cor de saída"
+                    type="color"
+                    value={saidaColor}
+                    onChange={(e) => setSaidaColor(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="mt-2 inline-flex items-center gap-2 text-xs text-gray-600">
+              <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: saidaColor }}></span>
+              <span>{saidaColor}</span>
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
               {saidas.map((saida, index) => (
-                <div key={index} className="flex items-center bg-[#FFEAE6] text-[#b3594b] text-sm font-medium px-3 py-1.5 rounded-md border border-[#FFD6CF]">
-                  <span>{saida}</span>
+                <div
+                  key={index}
+                  className="flex items-center text-sm font-medium px-3 py-1.5 rounded-md border"
+                  style={{
+                    backgroundColor: `${saida.color}1A`,
+                    borderColor: `${saida.color}33`,
+                    color: saida.color,
+                  }}
+                >
+                  <span className="inline-block w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: saida.color }}></span>
+                  <span>{saida.label}</span>
                   <button className="ml-1.5" onClick={() => removeSaida(index)}>
                     <i className="w-4 h-4" data-feather="x"></i>
                   </button>

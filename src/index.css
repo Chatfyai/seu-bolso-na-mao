@@ -122,6 +122,56 @@ All colors MUST be HSL.
 }
 
 @layer components {
+  /* Mobile responsiveness fixes for Sheet headers */
+  [data-radix-dialog-content] .bg-background.border-b {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    min-height: 56px !important;
+    background: hsl(var(--background)) !important;
+  }
+  
+  [data-radix-dialog-content] .bg-background.border-b > div {
+    min-height: 56px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 1rem !important;
+  }
+  
+  @media (min-width: 640px) {
+    [data-radix-dialog-content] .bg-background.border-b > div {
+      padding: 0 1.25rem !important;
+    }
+  }
+  
+  /* Ensure headers are visible on mobile viewports */
+  @media (max-width: 639px) {
+    [data-radix-dialog-content] {
+      position: fixed !important;
+      inset: 0 !important;
+      height: 100vh !important;
+      max-height: 100vh !important;
+    }
+    
+    [data-radix-dialog-content] .bg-background.border-b {
+      position: sticky !important;
+      top: 0 !important;
+      background: hsl(var(--background)) !important;
+      border-bottom: 1px solid hsl(var(--border)) !important;
+    }
+    
+    /* Target specific Radix elements that might be problematic */
+    [id^="radix-"] .bg-background.border-b,
+    [id*="radix"] .bg-background.border-b {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 10 !important;
+      background: hsl(var(--background)) !important;
+      transform: none !important;
+    }
+  }
+
   /* Login Form Styles */
   .form-input {
     height: 56px;
