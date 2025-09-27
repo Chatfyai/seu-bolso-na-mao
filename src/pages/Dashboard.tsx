@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { useAuth } from '@/hooks/useAuth';
 import LembretesPagamento from './LembretesPagamento';
 import EmBreve from './EmBreve';
 import EmBreveEmpresa from './EmBreveEmpresa';
@@ -11,6 +12,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user, profile, loading } = useAuth();
   const [accountType, setAccountType] = useState('Pessoa Física');
   const [showTutorial, setShowTutorial] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
@@ -18,6 +20,17 @@ const Dashboard = () => {
   type PanelType = 'ia' | 'calendario' | 'relatorios' | 'planilha' | 'empresa' | 'novo' | 'ultimos' | null;
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<PanelType>(null);
+
+  // Redirect to onboarding if not completed
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        navigate('/login');
+      } else if (profile && !profile.onboarding_completed) {
+        navigate('/account-type');
+      }
+    }
+  }, [user, profile, loading, navigate]);
   type HeaderPanelType = 'profile' | 'settings' | 'help' | null;
   const [isHeaderSheetOpen, setIsHeaderSheetOpen] = useState(false);
   const [activeHeaderPanel, setActiveHeaderPanel] = useState<HeaderPanelType>(null);

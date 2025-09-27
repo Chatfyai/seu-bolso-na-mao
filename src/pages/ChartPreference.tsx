@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { BarChart3, PieChart, TrendingUp, Info, CheckCircle, ChevronRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const ChartPreference = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedChart, setSelectedChart] = useState('pie');
 
   const chartOptions = [
@@ -34,8 +37,20 @@ const ChartPreference = () => {
     setSelectedChart(chartId);
   };
 
-  const handleFinish = () => {
-    navigate('/loading');
+  const handleFinish = async () => {
+    try {
+      // Mark onboarding as completed
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ onboarding_completed: true })
+          .eq('user_id', user.id);
+      }
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      navigate('/dashboard');
+    }
   };
 
   return (

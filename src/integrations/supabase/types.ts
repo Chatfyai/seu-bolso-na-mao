@@ -52,6 +52,7 @@ export type Database = {
           account_type: string
           created_at: string
           id: string
+          onboarding_completed: boolean
           updated_at: string
           user_id: string
         }
@@ -59,6 +60,7 @@ export type Database = {
           account_type: string
           created_at?: string
           id?: string
+          onboarding_completed?: boolean
           updated_at?: string
           user_id: string
         }
@@ -66,6 +68,7 @@ export type Database = {
           account_type?: string
           created_at?: string
           id?: string
+          onboarding_completed?: boolean
           updated_at?: string
           user_id?: string
         }

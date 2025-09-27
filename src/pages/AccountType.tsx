@@ -1,12 +1,19 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const AccountType = () => {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+
+  useEffect(() => {
+    if (profile?.onboarding_completed) {
+      navigate('/dashboard');
+    }
+  }, [profile, navigate]);
 
   const handlePersonalAccount = async () => {
     setLoading(true);
@@ -14,11 +21,7 @@ const AccountType = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast({
-          variant: "destructive",
-          title: "Erro de autenticação",
-          description: "Você precisa estar logado para continuar.",
-        });
+        toast.error("Você precisa estar logado para continuar.");
         navigate("/login");
         return;
       }
@@ -39,18 +42,11 @@ const AccountType = () => {
 
       if (categoriesError) throw categoriesError;
 
-      toast({
-        title: "Conta configurada!",
-        description: "Tipo de conta salvo com sucesso.",
-      });
+      toast.success("Conta configurada com sucesso!");
 
       navigate("/setup");
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao salvar",
-        description: error.message || "Tente novamente.",
-      });
+      toast.error(error.message || "Erro ao salvar. Tente novamente.");
     } finally {
       setLoading(false);
     }
