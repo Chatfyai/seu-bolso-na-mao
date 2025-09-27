@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { BarChart3, PieChart, TrendingUp, Info, CheckCircle, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,8 +6,27 @@ import { useAuth } from "@/hooks/useAuth";
 
 const ChartPreference = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile, loading } = useAuth();
   const [selectedChart, setSelectedChart] = useState('pie');
+
+  useEffect(() => {
+    // Only redirect if profile data is loaded and onboarding is completed
+    if (!loading && profile?.onboarding_completed) {
+      navigate('/dashboard');
+    }
+  }, [profile, loading, navigate]);
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   const chartOptions = [
     {
