@@ -26,23 +26,11 @@ const Dashboard = () => {
     if (!loading) {
       if (!user) {
         navigate('/login');
-      } else if (user && (!profile || !profile.onboarding_completed)) {
+      } else if (profile && !profile.onboarding_completed) {
         navigate('/account-type');
       }
     }
   }, [user, profile, loading, navigate]);
-
-  // Show loading while checking authentication
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
   type HeaderPanelType = 'profile' | 'settings' | 'help' | null;
   const [isHeaderSheetOpen, setIsHeaderSheetOpen] = useState(false);
   const [activeHeaderPanel, setActiveHeaderPanel] = useState<HeaderPanelType>(null);

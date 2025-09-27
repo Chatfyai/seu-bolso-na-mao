@@ -13,57 +13,19 @@ const Login = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in and handle routing
-    const checkUserAndRoute = async () => {
+    // Check if user is already logged in
+    const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        // Check if user has a profile and onboarding status
-        try {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('onboarding_completed')
-            .eq('user_id', session.user.id)
-            .single();
-
-          if (error) {
-            console.error('Error fetching profile:', error);
-            // If no profile exists, go to account-type to create one
-            navigate("/account-type");
-          } else if (profile?.onboarding_completed) {
-            navigate("/dashboard");
-          } else {
-            navigate("/account-type");
-          }
-        } catch (error) {
-          console.error('Profile check error:', error);
-          navigate("/account-type");
-        }
+      if (session) {
+        navigate("/account-type");
       }
     };
-    
-    checkUserAndRoute();
+    checkUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        // Same logic for new sign-ins
-        try {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('onboarding_completed')
-            .eq('user_id', session.user.id)
-            .single();
-
-          if (error || !profile) {
-            navigate("/account-type");
-          } else if (profile.onboarding_completed) {
-            navigate("/dashboard");
-          } else {
-            navigate("/account-type");
-          }
-        } catch (error) {
-          navigate("/account-type");
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        navigate("/account-type");
       }
     });
 

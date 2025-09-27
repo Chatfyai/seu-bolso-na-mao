@@ -6,30 +6,17 @@ import { toast } from "sonner";
 
 const AccountType = () => {
   const navigate = useNavigate();
-  const { user, profile, loading } = useAuth();
-  const [submitting, setSubmitting] = useState(false);
+  const { user, profile } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Only redirect if profile data is loaded and onboarding is completed
-    if (!loading && profile?.onboarding_completed) {
+    if (profile?.onboarding_completed) {
       navigate('/dashboard');
     }
-  }, [profile, loading, navigate]);
-
-  // Show loading while checking authentication
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
+  }, [profile, navigate]);
 
   const handlePersonalAccount = async () => {
-    setSubmitting(true);
+    setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -61,7 +48,7 @@ const AccountType = () => {
     } catch (error: any) {
       toast.error(error.message || "Erro ao salvar. Tente novamente.");
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 

@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 const Setup = () => {
   const navigate = useNavigate();
-  const { user, profile, loading: authLoading } = useAuth();
+  const { toast } = useToast();
   type Categoria = { label: string; color: string };
   const [entradaInput, setEntradaInput] = useState('');
   const [saidaInput, setSaidaInput] = useState('');
@@ -16,25 +15,6 @@ const Setup = () => {
   const [saidas, setSaidas] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-
-  // Redirect if onboarding is completed
-  useEffect(() => {
-    if (!authLoading && profile?.onboarding_completed) {
-      navigate('/dashboard');
-    }
-  }, [profile, authLoading, navigate]);
-
-  // Show loading while checking authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Load user categories and initialize feather icons
   useEffect(() => {
@@ -73,7 +53,11 @@ const Setup = () => {
       setEntradas(entradasFromDb.map(cat => ({ label: cat.name, color: cat.color })));
       setSaidas(saidasFromDb.map(cat => ({ label: cat.name, color: cat.color })));
     } catch (error: any) {
-      toast.error(error.message || "Erro ao carregar categorias");
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar categorias",
+        description: error.message || "Tente novamente.",
+      });
     } finally {
       setLoadingData(false);
     }
@@ -104,9 +88,16 @@ const Setup = () => {
         setEntradas([...entradas, { label: entradaInput.trim(), color: entradaColor }]);
         setEntradaInput('');
         
-        toast.success("Nova categoria de entrada criada!");
+        toast({
+          title: "Categoria adicionada!",
+          description: "Nova categoria de entrada criada.",
+        });
       } catch (error: any) {
-        toast.error(error.message || "Erro ao adicionar categoria");
+        toast({
+          variant: "destructive",
+          title: "Erro ao adicionar categoria",
+          description: error.message || "Tente novamente.",
+        });
       }
     }
   };
@@ -136,9 +127,16 @@ const Setup = () => {
         setSaidas([...saidas, { label: saidaInput.trim(), color: saidaColor }]);
         setSaidaInput('');
         
-        toast.success("Nova categoria de saída criada!");
+        toast({
+          title: "Categoria adicionada!",
+          description: "Nova categoria de saída criada.",
+        });
       } catch (error: any) {
-        toast.error(error.message || "Erro ao adicionar categoria");
+        toast({
+          variant: "destructive",
+          title: "Erro ao adicionar categoria",
+          description: error.message || "Tente novamente.",
+        });
       }
     }
   };
@@ -165,9 +163,16 @@ const Setup = () => {
 
       setEntradas(entradas.filter((_, i) => i !== index));
       
-      toast.success("Categoria de entrada excluída!");
+      toast({
+        title: "Categoria removida!",
+        description: "Categoria de entrada excluída.",
+      });
     } catch (error: any) {
-      toast.error(error.message || "Erro ao remover categoria");
+      toast({
+        variant: "destructive",
+        title: "Erro ao remover categoria",
+        description: error.message || "Tente novamente.",
+      });
     }
   };
 
@@ -193,9 +198,16 @@ const Setup = () => {
 
       setSaidas(saidas.filter((_, i) => i !== index));
       
-      toast.success("Categoria de saída excluída!");
+      toast({
+        title: "Categoria removida!",
+        description: "Categoria de saída excluída.",
+      });
     } catch (error: any) {
-      toast.error(error.message || "Erro ao remover categoria");
+      toast({
+        variant: "destructive",
+        title: "Erro ao remover categoria",
+        description: error.message || "Tente novamente.",
+      });
     }
   };
 
