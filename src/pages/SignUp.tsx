@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const SignUp = () => {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,7 +24,11 @@ const SignUp = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/account-type`
+          emailRedirectTo: `${window.location.origin}/account-type`,
+          data: {
+            first_name: firstName,
+            last_name: lastName
+          }
         }
       });
 
@@ -57,6 +63,30 @@ const SignUp = () => {
           </div>
 
           <form onSubmit={handleSignUp} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">Primeiro Nome</Label>
+              <Input
+                id="firstName"
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Digite seu primeiro nome"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Último Nome</Label>
+              <Input
+                id="lastName"
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Digite seu último nome"
+                required
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input

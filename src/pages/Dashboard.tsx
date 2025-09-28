@@ -133,7 +133,11 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 shrink-0 rounded-full bg-cover bg-center bg-gray-400"></div>
-              <h1 className="text-lg font-bold">Olá, Sofia!</h1>
+              <h1 className="text-lg font-bold">
+                Olá, {profile?.first_name && profile?.last_name 
+                  ? `${profile.first_name} ${profile.last_name}` 
+                  : user?.email?.split('@')[0] || 'Usuário'}!
+              </h1>
             </div>
             <div className="flex items-center gap-2 relative" ref={menuRef}>
               <button 

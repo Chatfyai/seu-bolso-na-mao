@@ -5,6 +5,8 @@ import type { User } from '@supabase/supabase-js';
 interface UserProfile {
   account_type: string;
   onboarding_completed: boolean;
+  first_name?: string;
+  last_name?: string;
 }
 
 export const useAuth = () => {
@@ -16,7 +18,7 @@ export const useAuth = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('account_type, onboarding_completed')
+        .select('account_type, onboarding_completed, first_name, last_name')
         .eq('user_id', userId)
         .single();
       

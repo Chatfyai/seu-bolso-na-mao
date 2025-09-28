@@ -51,7 +51,9 @@ export type Database = {
         Row: {
           account_type: string
           created_at: string
+          first_name: string | null
           id: string
+          last_name: string | null
           onboarding_completed: boolean
           updated_at: string
           user_id: string
@@ -59,7 +61,9 @@ export type Database = {
         Insert: {
           account_type: string
           created_at?: string
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           onboarding_completed?: boolean
           updated_at?: string
           user_id: string
@@ -67,7 +71,9 @@ export type Database = {
         Update: {
           account_type?: string
           created_at?: string
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           onboarding_completed?: boolean
           updated_at?: string
           user_id?: string

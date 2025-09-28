@@ -31,7 +31,9 @@ const AccountType = () => {
         .from('profiles')
         .upsert({ 
           user_id: user.id, 
-          account_type: 'personal' 
+          account_type: 'personal',
+          first_name: user.user_metadata?.first_name || '',
+          last_name: user.user_metadata?.last_name || ''
         });
 
       if (error) throw error;
