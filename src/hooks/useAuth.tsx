@@ -56,5 +56,14 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  return { user, profile, loading, refreshProfile: () => user && fetchProfile(user.id) };
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
+
+  return { user, profile, loading, refreshProfile: () => user && fetchProfile(user.id), logout };
 };

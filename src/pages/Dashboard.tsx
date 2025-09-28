@@ -9,10 +9,11 @@ import CountUp from './CountUp';
 import NovoLancamento from './NovoLancamento';
 import UltimosLancamentos from './UltimosLancamentos';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import UserProfile from '@/components/UserProfile';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, logout } = useAuth();
   const [accountType, setAccountType] = useState('Pessoa Física');
   const [showTutorial, setShowTutorial] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
@@ -62,7 +63,7 @@ const Dashboard = () => {
     };
   }, [showMenu]);
 
-  const handleMenuItemClick = (action: string) => {
+  const handleMenuItemClick = async (action: string) => {
     setShowMenu(false);
     switch (action) {
       case 'profile':
@@ -78,7 +79,7 @@ const Dashboard = () => {
         setIsHeaderSheetOpen(true);
         break;
       case 'logout':
-        // TODO: Implement logout
+        await logout();
         navigate('/login');
         break;
       default:
@@ -132,8 +133,7 @@ const Dashboard = () => {
         <header className="bg-green-500 p-4 pb-12 text-white relative">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 shrink-0 rounded-full bg-cover bg-center bg-gray-400"></div>
-              <h1 className="text-lg font-bold">
+              <h1 className="text-lg font-light">
                 Olá, {profile?.first_name && profile?.last_name 
                   ? `${profile.first_name} ${profile.last_name}` 
                   : user?.email?.split('@')[0] || 'Usuário'}!
@@ -453,8 +453,19 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
-              {/* Placeholder content until pages are implemented */}
-              <EmBreve embedded onClose={() => setIsHeaderSheetOpen(false)} />
+              {activeHeaderPanel === 'profile' && (
+                <UserProfile 
+                  user={user} 
+                  profile={profile as any} 
+                  onClose={() => setIsHeaderSheetOpen(false)} 
+                />
+              )}
+              {activeHeaderPanel === 'settings' && (
+                <EmBreve embedded onClose={() => setIsHeaderSheetOpen(false)} />
+              )}
+              {activeHeaderPanel === 'help' && (
+                <EmBreve embedded onClose={() => setIsHeaderSheetOpen(false)} />
+              )}
             </div>
           </div>
         </SheetContent>
