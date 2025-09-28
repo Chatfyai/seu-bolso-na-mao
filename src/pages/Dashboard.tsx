@@ -8,11 +8,13 @@ import EmBreveEmpresa from './EmBreveEmpresa';
 import CountUp from './CountUp';
 import NovoLancamento from './NovoLancamento';
 import UltimosLancamentos from './UltimosLancamentos';
+import Relatorios from './Relatorios';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import DateRangePicker from '@/components/DateRangePicker';
+import FinancialCarousel from '@/components/FinancialCarousel';
 import UserProfile from '@/components/UserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import SettingsPanel from '@/components/SettingsPanel';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -44,9 +46,10 @@ const Dashboard = () => {
   type TimeGranularity = 'D' | 'M' | 'A';
   const [timeGranularity, setTimeGranularity] = useState<TimeGranularity>('M');
   const [recentTransactions, setRecentTransactions] = useState<Array<{ id: string; description: string | null; amount: number; type: 'entrada' | 'saida'; category_id: string | null; category_name?: string }>>([]);
-  const [expensesByCategory, setExpensesByCategory] = useState<Array<{ name: string; value: number; color: string }>>([]);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   useEffect(() => {
     const loadRecent = async () => {
@@ -72,67 +75,25 @@ const Dashboard = () => {
     loadRecent();
   }, [user]);
 
-  useEffect(() => {
-    const loadExpensesByCategory = async () => {
-      try {
-        if (!user) return;
-        
-        // Buscar transações de saída com suas categorias
-        const { data: transactions, error } = await supabase
-          .from('transactions')
-          .select(`
-            amount,
-            categories!inner(name, color)
-          `)
-          .eq('user_id', user.id)
-          .eq('type', 'saida')
-          .order('occurred_on', { ascending: false });
-
-        if (error) throw error;
-
-        // Agrupar por categoria e somar valores
-        const categoryTotals = new Map<string, { total: number; color: string }>();
-        
-        transactions?.forEach((transaction: any) => {
-          const categoryName = transaction.categories?.name || 'Sem categoria';
-          const categoryColor = transaction.categories?.color || '#9CA3AF';
-          const amount = Math.abs(transaction.amount);
-          
-          if (categoryTotals.has(categoryName)) {
-            categoryTotals.get(categoryName)!.total += amount;
-          } else {
-            categoryTotals.set(categoryName, { total: amount, color: categoryColor });
-          }
-        });
-
-        // Converter para formato do gráfico e ordenar por valor
-        const chartData = Array.from(categoryTotals.entries())
-          .map(([name, data]) => ({
-            name,
-            value: data.total,
-            color: data.color
-          }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 6); // Mostrar apenas as 6 maiores categorias
-
-        setExpensesByCategory(chartData);
-      } catch (e) {
-        console.error('Erro ao carregar gastos por categoria', e);
-      }
-    };
-    
-    loadExpensesByCategory();
-  }, [user]);
 
   useEffect(() => {
     const loadTotals = async () => {
       try {
         if (!user) return;
 
-        const { data, error } = await supabase
+        let query = supabase
           .from('transactions')
-          .select('amount, type')
+          .select('amount, type, occurred_on')
           .eq('user_id', user.id);
+
+        // Apply date filter if both dates are selected
+        if (startDate && endDate) {
+          const startDateStr = startDate.toISOString().split('T')[0];
+          const endDateStr = endDate.toISOString().split('T')[0];
+          query = query.gte('occurred_on', startDateStr).lte('occurred_on', endDateStr);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
 
@@ -155,11 +116,41 @@ const Dashboard = () => {
     };
 
     loadTotals();
-  }, [user]);
+  }, [user, startDate, endDate]);
 
   const handleCloseTutorial = () => {
     setShowTutorial(false);
   };
+
+  const handleDateRangeChange = (newStartDate: Date | null, newEndDate: Date | null) => {
+    setStartDate(newStartDate);
+    setEndDate(newEndDate);
+  };
+
+  // Preparar dados dos cards para o carrossel
+  const financialCards = [
+    {
+      id: 'income',
+      icon: 'trending_up',
+      title: 'Entradas Totais',
+      value: totalIncome,
+      color: 'text-[#3ecf8e]'
+    },
+    {
+      id: 'balance',
+      icon: 'account_balance_wallet',
+      title: 'Saldo',
+      value: totalIncome - totalExpense,
+      color: 'text-[#3ecf8e]'
+    },
+    {
+      id: 'expenses',
+      icon: 'trending_down',
+      title: 'Despesas Totais',
+      value: totalExpense,
+      color: 'text-[#FF7F6A]'
+    }
+  ];
 
   const toggleMenu = () => {
     setShowMenu(!showMenu);
@@ -222,7 +213,7 @@ const Dashboard = () => {
       case 'planilha':
         return 'Planilha';
       case 'novo':
-        return 'Novo Lançamento';
+        return '#root > div.relative.flex.min-h-screen.w-full.flex-col.overflow-x-hidden.bg-background > div.flex-grow > div.p-4 > div.mt-2.grid.grid-cols-2.gap-4çamento';
       case 'empresa':
         return 'Empresa';
       case 'ultimos':
@@ -340,128 +331,19 @@ const Dashboard = () => {
           </div>
         </div>
 
+
         {/* Financial Summary - Empty State */}
         <div className="p-4">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold text-foreground">Resumo Financeiro</h2>
-            <ToggleGroup
-              type="single"
-              size="sm"
-              value={timeGranularity}
-              onValueChange={(val) => {
-                if (val === 'D' || val === 'M' || val === 'A') {
-                  setTimeGranularity(val);
-                }
-              }}
-              aria-label="Selecionar período"
-            >
-              <ToggleGroupItem
-                value="D"
-                aria-label="Dia"
-                className="rounded-full w-9 h-9 p-0 text-sm font-semibold text-[#3ecf8e] data-[state=on]:bg-[#3ecf8e] data-[state=on]:text-white"
-              >
-                D
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="M"
-                aria-label="Mês"
-                className="rounded-full w-9 h-9 p-0 text-sm font-semibold text-[#3ecf8e] data-[state=on]:bg-[#3ecf8e] data-[state=on]:text-white"
-              >
-                M
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="A"
-                aria-label="Ano"
-                className="rounded-full w-9 h-9 p-0 text-sm font-semibold text-[#3ecf8e] data-[state=on]:bg-[#3ecf8e] data-[state=on]:text-white"
-              >
-                A
-              </ToggleGroupItem>
-            </ToggleGroup>
+            <div className="flex items-center justify-start gap-3">
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onDateChange={handleDateRangeChange}
+              />
+            </div>
+          <div className="mt-2">
+            <FinancialCarousel cards={financialCards} />
           </div>
-          <div className="mt-2 grid grid-cols-2 gap-4">
-            <div className="rounded-lg border border-border bg-card p-4 shadow-sm flex flex-col justify-between min-h-[120px]">
-              <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                  <span className="material-symbols-outlined text-muted-foreground">trending_up</span>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">Receitas</p>
-                <p className="text-lg font-bold text-foreground">
-                  R$ <CountUp from={0} to={totalIncome} separator="." duration={1} className="inline" />
-                </p>
-              </div>
-              <div className="mt-2 text-center">
-                <p className="text-xs text-muted-foreground">Nenhum dado ainda.</p>
-              </div>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-4 shadow-sm flex flex-col justify-between min-h-[120px]">
-              <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                  <span className="material-symbols-outlined text-muted-foreground">account_balance_wallet</span>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">Saldo Positivo</p>
-                <p className="text-lg font-bold text-foreground">
-                  R$ <CountUp from={0} to={totalIncome - totalExpense} separator="." duration={1} className="inline" />
-                </p>
-              </div>
-              <div className="mt-2 flex items-center justify-center">
-                <span className="material-symbols-outlined text-gray-300">add_chart</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Expenses by Category Chart */}
-        <div className="p-4">
-          <h2 className="text-lg font-bold text-foreground mb-4">Maiores Gastos por Categoria</h2>
-          {expensesByCategory.length === 0 ? (
-            <div className="flex flex-col items-center justify-center space-y-3 py-8">
-              <span className="material-symbols-outlined text-4xl text-gray-300">pie_chart</span>
-              <p className="text-center text-base font-light text-muted-foreground">Seus gastos por categoria aparecerão aqui</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={expensesByCategory}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      labelLine={false}
-                    >
-                      {expensesByCategory.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value: number) => [
-                        `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-                        'Valor'
-                      ]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              {/* Legend personalizada */}
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                {expensesByCategory.map((entry, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: entry.color }}
-                    ></div>
-                    <span className="text-sm text-foreground truncate">
-                      {entry.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Payment Reminders - Empty State */}
@@ -600,9 +482,12 @@ const Dashboard = () => {
               <LembretesPagamento embedded onClose={() => setIsSheetOpen(false)} />
             )}
             {activePanel === 'relatorios' && (
-              <div className="px-5 py-4 text-sm text-muted-foreground">
-                Relatórios de desempenho financeiro aparecerão aqui.
-              </div>
+              <Relatorios 
+                embedded 
+                onClose={() => setIsSheetOpen(false)} 
+                startDate={startDate}
+                endDate={endDate}
+              />
             )}
             {activePanel === 'planilha' && (
               <div className="px-5 py-4 text-sm text-muted-foreground">
