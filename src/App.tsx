@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import NovoLancamento from "./pages/NovoLancamento";
 import LembretesPagamento from "./pages/LembretesPagamento";
 import EmBreve from "./pages/EmBreve";
+import Perfil from "./pages/Perfil";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./hooks/useAuth";
 
@@ -93,6 +94,11 @@ const App = () => (
           <Route path="/em-breve" element={
             <AuthenticatedRoute>
               <EmBreve />
+            </AuthenticatedRoute>
+          } />
+          <Route path="/perfil" element={
+            <AuthenticatedRoute>
+              <Perfil />
             </AuthenticatedRoute>
           } />
           

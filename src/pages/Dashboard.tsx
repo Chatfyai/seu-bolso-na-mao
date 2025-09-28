@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,9 +14,14 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, profile, loading } = useAuth();
   const [accountType, setAccountType] = useState('Pessoa Física');
-  const [showTutorial, setShowTutorial] = useState(true);
-  const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [showTutorial, setShowTutorial] = useState(() => {
+    try {
+      return localStorage.getItem('dashboardTutorialSeen') !== 'true';
+    } catch {
+      return true;
+    }
+  });
+  
   type PanelType = 'ia' | 'calendario' | 'relatorios' | 'planilha' | 'empresa' | 'novo' | 'ultimos' | null;
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<PanelType>(null);
@@ -31,60 +36,18 @@ const Dashboard = () => {
       }
     }
   }, [user, profile, loading, navigate]);
-  type HeaderPanelType = 'profile' | 'settings' | 'help' | null;
-  const [isHeaderSheetOpen, setIsHeaderSheetOpen] = useState(false);
-  const [activeHeaderPanel, setActiveHeaderPanel] = useState<HeaderPanelType>(null);
   type TimeGranularity = 'D' | 'M' | 'A';
   const [timeGranularity, setTimeGranularity] = useState<TimeGranularity>('M');
 
+
   const handleCloseTutorial = () => {
     setShowTutorial(false);
+    try {
+      localStorage.setItem('dashboardTutorialSeen', 'true');
+    } catch {}
   };
 
-  const toggleMenu = () => {
-    setShowMenu(!showMenu);
-  };
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-
-    if (showMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showMenu]);
-
-  const handleMenuItemClick = (action: string) => {
-    setShowMenu(false);
-    switch (action) {
-      case 'profile':
-        setActiveHeaderPanel('profile');
-        setIsHeaderSheetOpen(true);
-        break;
-      case 'settings':
-        setActiveHeaderPanel('settings');
-        setIsHeaderSheetOpen(true);
-        break;
-      case 'help':
-        setActiveHeaderPanel('help');
-        setIsHeaderSheetOpen(true);
-        break;
-      case 'logout':
-        // TODO: Implement logout
-        navigate('/login');
-        break;
-      default:
-        break;
-    }
-  };
+  
 
   const openPanel = (panel: Exclude<PanelType, null>) => {
     setActivePanel(panel);
@@ -112,75 +75,27 @@ const Dashboard = () => {
     }
   })();
 
-  const headerPanelTitle = (() => {
-    switch (activeHeaderPanel) {
-      case 'profile':
-        return 'Perfil';
-      case 'settings':
-        return 'Configurações';
-      case 'help':
-        return 'Ajuda';
-      default:
-        return '';
-    }
-  })();
+
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background">
+    <div data-page="dashboard" className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background">
       <div className="flex-grow">
         {/* Header */}
         <header className="bg-green-500 p-4 pb-12 text-white relative">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 shrink-0 rounded-full bg-cover bg-center bg-gray-400"></div>
-              <h1 className="text-lg font-bold">
-                Olá, {profile?.first_name && profile?.last_name 
-                  ? `${profile.first_name} ${profile.last_name}` 
-                  : user?.email?.split('@')[0] || 'Usuário'}!
-              </h1>
-            </div>
-            <div className="flex items-center gap-2 relative" ref={menuRef}>
-              <button 
-                onClick={toggleMenu}
+            <h1 className="text-lg font-light">
+              Olá, {profile?.first_name && profile?.last_name 
+                ? `${profile.first_name} ${profile.last_name}` 
+                : user?.email?.split('@')[0] || 'Usuário'}!
+            </h1>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('/perfil')}
                 className="flex h-12 w-12 items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors"
+                aria-label="Abrir perfil"
               >
-                <span className="material-symbols-outlined">menu</span>
+                <span className="material-symbols-outlined">person</span>
               </button>
-              
-              {/* Dropdown Menu */}
-              {showMenu && (
-                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
-                  <button
-                    onClick={() => handleMenuItemClick('profile')}
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-3"
-                  >
-                    <span className="material-symbols-outlined text-gray-500">person</span>
-                    Perfil
-                  </button>
-                  <button
-                    onClick={() => handleMenuItemClick('settings')}
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-3"
-                  >
-                    <span className="material-symbols-outlined text-gray-500">settings</span>
-                    Configurações
-                  </button>
-                  <button
-                    onClick={() => handleMenuItemClick('help')}
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-3"
-                  >
-                    <span className="material-symbols-outlined text-gray-500">help</span>
-                    Ajuda
-                  </button>
-                  <hr className="my-2 border-gray-200" />
-                  <button
-                    onClick={() => handleMenuItemClick('logout')}
-                    className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-3"
-                  >
-                    <span className="material-symbols-outlined text-red-500">logout</span>
-                    Sair
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </header>
@@ -437,28 +352,6 @@ const Dashboard = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Right-side sliding panel for header menu */}
-      <Sheet open={isHeaderSheetOpen} onOpenChange={setIsHeaderSheetOpen}>
-        <SheetContent side="right" className="p-0 h-screen w-full sm:max-w-none max-w-none">
-          <div className="flex flex-col h-full">
-            <div className="bg-background border-b sticky top-0 z-10">
-              <div className="px-4 sm:px-5 h-14 flex items-center justify-between min-h-[56px]">
-                <h2 className="text-base font-semibold text-foreground truncate">{headerPanelTitle}</h2>
-                <button 
-                  onClick={() => setIsHeaderSheetOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
-                >
-                  <span className="material-symbols-outlined text-gray-500">close</span>
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {/* Placeholder content until pages are implemented */}
-              <EmBreve embedded onClose={() => setIsHeaderSheetOpen(false)} />
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 };
