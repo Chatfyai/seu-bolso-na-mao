@@ -48,75 +48,111 @@ const Dashboard = () => {
   const [recentTransactions, setRecentTransactions] = useState<Array<{ id: string; description: string | null; amount: number; type: 'entrada' | 'saida'; category_id: string | null; category_name?: string }>>([]);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  // Função para obter o primeiro e último dia do mês atual
+  const getCurrentMonthRange = () => {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return { firstDay, lastDay };
+  };
+
+  const { firstDay: currentMonthStart, lastDay: currentMonthEnd } = getCurrentMonthRange();
+  const [startDate, setStartDate] = useState<Date | null>(currentMonthStart);
+  const [endDate, setEndDate] = useState<Date | null>(currentMonthEnd);
+
+  const loadRecentTransactions = async () => {
+    try {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('id, description, amount, type, category_id, categories(name)')
+        .eq('user_id', user.id)
+        .order('occurred_on', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(4);
+      if (error) throw error;
+      const processedData = (data || []).map((t: any) => ({
+        ...t,
+        category_name: t.categories?.name || null
+      }));
+      setRecentTransactions(processedData);
+    } catch (e) {
+      console.error('Erro ao carregar últimos lançamentos', e);
+    }
+  };
 
   useEffect(() => {
-    const loadRecent = async () => {
-      try {
-        if (!user) return;
-        const { data, error } = await supabase
-          .from('transactions')
-          .select('id, description, amount, type, category_id, categories(name)')
-          .eq('user_id', user.id)
-          .order('occurred_on', { ascending: false })
-          .order('created_at', { ascending: false })
-          .limit(4);
-        if (error) throw error;
-        const processedData = (data || []).map((t: any) => ({
-          ...t,
-          category_name: t.categories?.name || null
-        }));
-        setRecentTransactions(processedData);
-      } catch (e) {
-        console.error('Erro ao carregar últimos lançamentos', e);
-      }
-    };
-    loadRecent();
+    loadRecentTransactions();
   }, [user]);
 
 
-  useEffect(() => {
-    const loadTotals = async () => {
-      try {
-        if (!user) return;
+  const loadTotals = async () => {
+    try {
+      if (!user) return;
 
-        let query = supabase
-          .from('transactions')
-          .select('amount, type, occurred_on')
-          .eq('user_id', user.id);
+      let query = supabase
+        .from('transactions')
+        .select('amount, type, occurred_on')
+        .eq('user_id', user.id);
 
-        // Apply date filter if both dates are selected
-        if (startDate && endDate) {
-          const startDateStr = startDate.toISOString().split('T')[0];
-          const endDateStr = endDate.toISOString().split('T')[0];
-          query = query.gte('occurred_on', startDateStr).lte('occurred_on', endDateStr);
+      // Sempre aplicar filtro de data (padrão: mês atual)
+      const filterStartDate = startDate || currentMonthStart;
+      const filterEndDate = endDate || currentMonthEnd;
+      
+      const startDateStr = filterStartDate.toISOString().split('T')[0];
+      const endDateStr = filterEndDate.toISOString().split('T')[0];
+      query = query.gte('occurred_on', startDateStr).lte('occurred_on', endDateStr);
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      let income = 0;
+      let expense = 0;
+
+      (data || []).forEach((t: any) => {
+        if (t.type === 'entrada') {
+          income += Math.abs(Number(t.amount || 0));
+        } else if (t.type === 'saida') {
+          expense += Math.abs(Number(t.amount || 0));
         }
+      });
 
-        const { data, error } = await query;
+      setTotalIncome(income);
+      setTotalExpense(expense);
+    } catch (e) {
+      console.error('Erro ao carregar totais', e);
+    }
+  };
 
-        if (error) throw error;
-
-        let income = 0;
-        let expense = 0;
-
-        (data || []).forEach((t: any) => {
-          if (t.type === 'entrada') {
-            income += Math.abs(Number(t.amount || 0));
-          } else if (t.type === 'saida') {
-            expense += Math.abs(Number(t.amount || 0));
-          }
-        });
-
-        setTotalIncome(income);
-        setTotalExpense(expense);
-      } catch (e) {
-        console.error('Erro ao carregar totais', e);
-      }
-    };
-
+  useEffect(() => {
     loadTotals();
   }, [user, startDate, endDate]);
+
+  // Verificar e atualizar para o mês atual quando o componente é montado ou quando o usuário muda
+  useEffect(() => {
+    if (user) {
+      checkAndUpdateCurrentMonth();
+    }
+  }, [user]);
+
+  // Função para atualizar todos os dados
+  const refreshData = async () => {
+    await Promise.all([loadTotals(), loadRecentTransactions()]);
+  };
+
+  // Função para verificar e atualizar para o mês atual se necessário
+  const checkAndUpdateCurrentMonth = () => {
+    const { firstDay, lastDay } = getCurrentMonthRange();
+    
+    // Verificar se as datas atuais ainda correspondem ao mês atual
+    if (!startDate || !endDate || 
+        startDate.getMonth() !== firstDay.getMonth() || 
+        startDate.getFullYear() !== firstDay.getFullYear()) {
+      setStartDate(firstDay);
+      setEndDate(lastDay);
+    }
+  };
 
   const handleCloseTutorial = () => {
     setShowTutorial(false);
@@ -213,7 +249,7 @@ const Dashboard = () => {
       case 'planilha':
         return 'Planilha';
       case 'novo':
-        return '#root > div.relative.flex.min-h-screen.w-full.flex-col.overflow-x-hidden.bg-background > div.flex-grow > div.p-4 > div.mt-2.grid.grid-cols-2.gap-4çamento';
+        return 'Lançamento';
       case 'empresa':
         return 'Empresa';
       case 'ultimos':
@@ -495,7 +531,12 @@ const Dashboard = () => {
               </div>
             )}
             {activePanel === 'novo' && (
-              <NovoLancamento embedded onClose={() => { setIsSheetOpen(false); setEditTx(null); }} editTx={editTx} />
+              <NovoLancamento 
+                embedded 
+                onClose={() => { setIsSheetOpen(false); setEditTx(null); }} 
+                editTx={editTx}
+                onTransactionSaved={refreshData}
+              />
             )}
               {activePanel === 'empresa' && (
                 <EmBreveEmpresa embedded onClose={() => setIsSheetOpen(false)} />
@@ -519,8 +560,8 @@ const Dashboard = () => {
                       .eq('id', id)
                       .eq('user_id', user?.id);
                     if (error) throw error;
-                    // Recarregar a lista após exclusão
-                    window.location.reload();
+                    // Atualizar os dados automaticamente
+                    await refreshData();
                   } catch (e) {
                     console.error('Erro ao excluir', e);
                   }

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ChevronDown, Edit3, DollarSign, X } from 'lucide-react';
+import { Calendar, ChevronDown, Edit3, DollarSign, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 type EditTx = { id: string; description: string | null; amount: number; type: 'entrada' | 'saida'; category_id: string | null; occurred_on: string };
@@ -8,9 +8,10 @@ type NovoLancamentoProps = {
   embedded?: boolean;
   onClose?: () => void;
   editTx?: EditTx | null;
+  onTransactionSaved?: () => Promise<void>;
 };
 
-const NovoLancamento = ({ embedded = false, onClose, editTx }: NovoLancamentoProps) => {
+const NovoLancamento = ({ embedded = false, onClose, editTx, onTransactionSaved }: NovoLancamentoProps) => {
   const navigate = useNavigate();
   const [tipoTransacao, setTipoTransacao] = useState<'entrada' | 'saida'>('entrada');
   const getToday = () => new Date().toISOString().slice(0, 10);
@@ -20,6 +21,11 @@ const NovoLancamento = ({ embedded = false, onClose, editTx }: NovoLancamentoPro
   const [valor, setValor] = useState('');
   const [errors, setErrors] = useState<{ categoria?: string; valor?: string }>({});
   const [categorias, setCategorias] = useState<Array<{ id: string; name: string; type: 'entrada' | 'saida'; color: string }>>([]);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
 
   useEffect(() => {
     const loadCategorias = async () => {
@@ -60,7 +66,65 @@ const NovoLancamento = ({ embedded = false, onClose, editTx }: NovoLancamentoPro
     setCategoria('');
   }, [tipoTransacao]);
 
+  // Fechar calendário ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (showCalendar && !target.closest('.calendar-container')) {
+        setShowCalendar(false);
+      }
+    };
+
+    if (showCalendar) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCalendar]);
+
   const categoriasFiltradas = useMemo(() => categorias.filter(c => c.type === tipoTransacao), [categorias, tipoTransacao]);
+
+  // Funções do calendário
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+
+  const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      if (direction === 'prev') {
+        newDate.setMonth(prev.getMonth() - 1);
+      } else {
+        newDate.setMonth(prev.getMonth() + 1);
+      }
+      return newDate;
+    });
+  };
+
+  const selectDate = (day: number) => {
+    const selectedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    setData(selectedDate.toISOString().slice(0, 10));
+    setShowCalendar(false);
+  };
+
+  const formatDisplayDate = (dateString: string) => {
+    if (!dateString) return 'Selecionar data';
+    const date = new Date(dateString + 'T00:00:00');
+    return date.toLocaleDateString('pt-BR');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,12 +166,14 @@ const NovoLancamento = ({ embedded = false, onClose, editTx }: NovoLancamentoPro
           });
         if (error) throw error;
       }
+      
+      // Atualizar os dados automaticamente
+      if (onTransactionSaved) {
+        await onTransactionSaved();
+      }
+      
       if (embedded && onClose) {
         onClose();
-        // Recarregar a página para atualizar a lista
-        if (editTx) {
-          window.location.reload();
-        }
       } else {
         navigate('/dashboard');
       }
@@ -127,22 +193,22 @@ const NovoLancamento = ({ embedded = false, onClose, editTx }: NovoLancamentoPro
   return (
     <div className={"flex flex-col h-full max-w-md mx-auto bg-white " + (embedded ? '' : 'min-h-screen')}>
       {/* Header */}
-      <header className="pt-8 pb-4 px-6 text-center relative">
-        <h1 className="text-2xl font-bold text-foreground">
-          {editTx ? 'Editar Lançamento' : 'Novo Lançamento'}
-        </h1>
-        {!embedded && (
+      {!embedded && (
+        <header className="pt-8 pb-4 px-6 text-center relative">
+          <h1 className="text-2xl font-bold text-foreground">
+            {editTx ? 'Editar Lançamento' : 'Novo Lançamento'}
+          </h1>
           <button 
             onClick={handleClose}
             className="absolute right-6 top-8 flex h-10 w-10 items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
           >
             <X className="h-5 w-5 text-gray-600" />
           </button>
-        )}
-      </header>
+        </header>
+      )}
 
       {/* Main Content */}
-      <main className="flex-grow px-6">
+      <main className={`flex-grow px-6 ${embedded ? 'pt-6' : ''}`}>
         {/* Toggle Entrada/Saída */}
         <div className="mb-6">
           <div className="relative flex items-center bg-[#f1f5f9] rounded-xl p-1 h-12 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.05)]">
@@ -191,20 +257,119 @@ const NovoLancamento = ({ embedded = false, onClose, editTx }: NovoLancamentoPro
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Data */}
           <div>
-            <label className="block text-[0.9375rem] font-medium text-[#374151] mb-2" htmlFor="data">
+            <label className="block text-[0.9375rem] font-medium text-[#374151] mb-2">
               Data do Lançamento
             </label>
-            <div className="relative">
-              <input
-                className="w-full h-[52px] px-4 py-3 bg-white border border-[#e5e7eb] rounded-lg placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#3ecf8e] focus:border-[#3ecf8e] transition-colors"
-                id="data"
-                type="date"
-                value={data}
-                onChange={(e) => setData(e.target.value)}
-              />
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+            <div className="relative calendar-container">
+              <button
+                type="button"
+                onClick={() => setShowCalendar(!showCalendar)}
+                className="w-full h-[52px] px-4 py-3 bg-white border border-[#e5e7eb] rounded-lg text-left focus:outline-none focus:ring-1 focus:ring-[#3ecf8e] focus:border-[#3ecf8e] transition-colors flex items-center justify-between"
+              >
+                <span className="text-[#374151]">{formatDisplayDate(data)}</span>
                 <Calendar className="w-5 h-5 text-gray-400" />
-              </div>
+              </button>
+              
+              {showCalendar && (
+                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4 w-full">
+                  {/* Header do calendário */}
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      type="button"
+                      onClick={() => navigateMonth('prev')}
+                      className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-600" />
+                    </button>
+                    
+                    <h3 className="font-semibold text-gray-800">
+                      {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                    </h3>
+                    
+                    <button
+                      type="button"
+                      onClick={() => navigateMonth('next')}
+                      className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </div>
+
+                  {/* Dias da semana */}
+                  <div className="grid grid-cols-7 gap-1 mb-2">
+                    {daysOfWeek.map(day => (
+                      <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Grid do calendário */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {(() => {
+                      const daysInMonth = getDaysInMonth(currentMonth);
+                      const firstDay = getFirstDayOfMonth(currentMonth);
+                      const days = [];
+                      const selectedDate = new Date(data + 'T00:00:00');
+                      const today = new Date();
+
+                      // Células vazias para os dias antes do primeiro dia do mês
+                      for (let i = 0; i < firstDay; i++) {
+                        days.push(
+                          <div key={`empty-${i}`} className="h-10"></div>
+                        );
+                      }
+
+                      // Dias do mês
+                      for (let day = 1; day <= daysInMonth; day++) {
+                        const dayDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+                        const isSelected = dayDate.toDateString() === selectedDate.toDateString();
+                        const isToday = dayDate.toDateString() === today.toDateString();
+                        
+                        days.push(
+                          <button
+                            key={day}
+                            type="button"
+                            onClick={() => selectDate(day)}
+                            className={`h-10 rounded-md text-sm font-medium transition-colors ${
+                              isSelected
+                                ? 'bg-[#3ecf8e] text-white'
+                                : isToday
+                                ? 'bg-[#3ecf8e]/20 text-[#3ecf8e] font-semibold'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {day}
+                          </button>
+                        );
+                      }
+
+                      return days;
+                    })()}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="mt-4 pt-3 border-t border-gray-200 flex justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setData(getToday());
+                        setShowCalendar(false);
+                      }}
+                      className="px-3 py-1 text-xs bg-[#3ecf8e] text-white rounded-md hover:bg-[#3ecf8e]/90 transition-colors"
+                    >
+                      Hoje
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowCalendar(false)}
+                      className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      Fechar
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

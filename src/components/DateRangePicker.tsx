@@ -8,7 +8,10 @@ type DateRangePickerProps = {
 
 const DateRangePicker = ({ startDate, endDate, onDateChange }: DateRangePickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    // Inicializar com o mês da data de início se disponível, senão mês atual
+    return startDate || new Date();
+  });
   const [selectingStart, setSelectingStart] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +38,13 @@ const DateRangePicker = ({ startDate, endDate, onDateChange }: DateRangePickerPr
     };
   }, [isOpen]);
 
+  // Atualizar o mês do calendário quando as datas mudarem
+  useEffect(() => {
+    if (startDate) {
+      setCurrentMonth(new Date(startDate.getFullYear(), startDate.getMonth(), 1));
+    }
+  }, [startDate]);
+
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
@@ -48,8 +58,25 @@ const DateRangePicker = ({ startDate, endDate, onDateChange }: DateRangePickerPr
     return date.toLocaleDateString('pt-BR');
   };
 
+  const isFullMonthSelected = () => {
+    if (!startDate || !endDate) return false;
+    
+    const firstDayOfMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const lastDayOfMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+    
+    return startDate.toDateString() === firstDayOfMonth.toDateString() &&
+           endDate.toDateString() === lastDayOfMonth.toDateString();
+  };
+
   const formatDateRange = () => {
     if (startDate && endDate) {
+      if (isFullMonthSelected()) {
+        const monthNames = [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+        return `${monthNames[startDate.getMonth()]} ${startDate.getFullYear()}`;
+      }
       return `${formatDate(startDate)} - ${formatDate(endDate)}`;
     } else if (startDate) {
       return `${formatDate(startDate)} - Selecione fim`;
@@ -101,6 +128,16 @@ const DateRangePicker = ({ startDate, endDate, onDateChange }: DateRangePickerPr
       }
       return newDate;
     });
+  };
+
+  const selectCurrentMonth = () => {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    onDateChange(firstDay, lastDay);
+    setCurrentMonth(firstDay);
+    setSelectingStart(true);
+    setIsOpen(false);
   };
 
   const renderCalendar = () => {
@@ -188,8 +225,24 @@ const DateRangePicker = ({ startDate, endDate, onDateChange }: DateRangePickerPr
             {renderCalendar()}
           </div>
 
-          {/* Footer with instructions */}
+          {/* Footer with instructions and quick actions */}
           <div className="mt-4 pt-3 border-t border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <button
+                onClick={selectCurrentMonth}
+                className="px-3 py-1 text-xs bg-[#3ecf8e] text-white rounded-md hover:bg-[#3ecf8e]/90 transition-colors"
+              >
+                Mês Atual
+              </button>
+              {startDate && endDate && (
+                <button
+                  onClick={() => onDateChange(null, null)}
+                  className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
             <p className="text-xs text-gray-500 text-center">
               {selectingStart || !startDate 
                 ? 'Selecione a data de início' 
