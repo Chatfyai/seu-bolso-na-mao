@@ -33,7 +33,8 @@ const AccountType = () => {
           user_id: user.id, 
           account_type: 'personal',
           first_name: user.user_metadata?.first_name || '',
-          last_name: user.user_metadata?.last_name || ''
+          last_name: user.user_metadata?.last_name || '',
+          onboarding_account_type_completed: true
         });
 
       if (error) throw error;

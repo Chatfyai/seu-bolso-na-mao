@@ -17,15 +17,55 @@ const Login = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/account-type");
+        // Check user's onboarding status for correct redirection
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarding_completed, onboarding_account_type_completed, onboarding_setup_completed, onboarding_charts_completed')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (profile?.onboarding_completed) {
+          navigate('/dashboard');
+        } else {
+          // Redirect to the next pending onboarding step
+          if (!profile?.onboarding_account_type_completed) {
+            navigate('/account-type');
+          } else if (!profile?.onboarding_setup_completed) {
+            navigate('/setup');
+          } else if (!profile?.onboarding_charts_completed) {
+            navigate('/chart-preference');
+          } else {
+            navigate('/dashboard');
+          }
+        }
       }
     };
     checkUser();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Listen for auth changes to redirect after login
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        navigate("/account-type");
+        // Check user's onboarding status
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarding_completed, onboarding_account_type_completed, onboarding_setup_completed, onboarding_charts_completed')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (profile?.onboarding_completed) {
+          navigate('/dashboard');
+        } else {
+          // Redirect to the next pending onboarding step
+          if (!profile?.onboarding_account_type_completed) {
+            navigate('/account-type');
+          } else if (!profile?.onboarding_setup_completed) {
+            navigate('/setup');
+          } else if (!profile?.onboarding_charts_completed) {
+            navigate('/chart-preference');
+          } else {
+            navigate('/dashboard');
+          }
+        }
       }
     });
 

@@ -224,8 +224,34 @@ const Setup = () => {
   const handleFinish = async () => {
     setLoading(true);
     try {
-      // All categories are already saved, just navigate
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Mark setup as completed
+        const { error } = await supabase
+          .from('profiles')
+          .update({ onboarding_setup_completed: true })
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error updating setup status:', error);
+          toast({
+            variant: "destructive",
+            title: "Erro ao salvar progresso",
+            description: "Tente novamente.",
+          });
+          return;
+        }
+      }
+      
       navigate('/chart-preference');
+    } catch (error: any) {
+      console.error('Error:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar progresso",
+        description: "Tente novamente.",
+      });
     } finally {
       setLoading(false);
     }

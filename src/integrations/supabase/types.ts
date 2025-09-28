@@ -54,7 +54,10 @@ export type Database = {
           first_name: string | null
           id: string
           last_name: string | null
+          onboarding_account_type_completed: boolean | null
+          onboarding_charts_completed: boolean | null
           onboarding_completed: boolean
+          onboarding_setup_completed: boolean | null
           updated_at: string
           user_id: string
         }
@@ -64,7 +67,10 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          onboarding_account_type_completed?: boolean | null
+          onboarding_charts_completed?: boolean | null
           onboarding_completed?: boolean
+          onboarding_setup_completed?: boolean | null
           updated_at?: string
           user_id: string
         }
@@ -74,7 +80,10 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          onboarding_account_type_completed?: boolean | null
+          onboarding_charts_completed?: boolean | null
           onboarding_completed?: boolean
+          onboarding_setup_completed?: boolean | null
           updated_at?: string
           user_id?: string
         }

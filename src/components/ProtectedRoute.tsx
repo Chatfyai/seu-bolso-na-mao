@@ -27,16 +27,37 @@ export const ProtectedRoute = ({
 
       // If user is authenticated
       if (user && profile) {
+        const currentPath = window.location.pathname;
+        
         // If onboarding is completed and this is an onboarding page
         if (redirectIfCompleted && profile.onboarding_completed) {
           navigate('/dashboard');
           return;
         }
         
-        // If onboarding is not completed and trying to access dashboard
-        if (!redirectIfCompleted && !profile.onboarding_completed && window.location.pathname === '/dashboard') {
-          navigate('/account-type');
+        // If trying to access dashboard but onboarding is not complete
+        if (currentPath === '/dashboard' && !profile.onboarding_completed) {
+          // Redirect to the next pending onboarding step
+          if (!profile.onboarding_account_type_completed) {
+            navigate('/account-type');
+          } else if (!profile.onboarding_setup_completed) {
+            navigate('/setup');
+          } else if (!profile.onboarding_charts_completed) {
+            navigate('/chart-preference');
+          }
           return;
+        }
+
+        // Prevent access to later onboarding steps if earlier ones aren't complete
+        if (!redirectIfCompleted) {
+          if (currentPath === '/setup' && !profile.onboarding_account_type_completed) {
+            navigate('/account-type');
+            return;
+          }
+          if (currentPath === '/chart-preference' && (!profile.onboarding_account_type_completed || !profile.onboarding_setup_completed)) {
+            navigate(!profile.onboarding_account_type_completed ? '/account-type' : '/setup');
+            return;
+          }
         }
       }
     }

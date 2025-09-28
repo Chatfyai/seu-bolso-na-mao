@@ -39,14 +39,19 @@ const ChartPreference = () => {
 
   const handleFinish = async () => {
     try {
-      // Mark onboarding as completed
       if (user) {
-        await supabase
+        const { error } = await supabase
           .from('profiles')
-          .update({ onboarding_completed: true })
+          .update({ 
+            onboarding_charts_completed: true,
+            onboarding_completed: true 
+          })
           .eq('user_id', user.id);
+
+        if (error) throw error;
+        
+        navigate('/dashboard');
       }
-      navigate('/dashboard');
     } catch (error) {
       console.error('Error completing onboarding:', error);
       navigate('/dashboard');
