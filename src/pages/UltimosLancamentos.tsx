@@ -1,46 +1,42 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 type UltimosLancamentosProps = {
   embedded?: boolean;
   onClose?: () => void;
   onOpenNovo?: () => void;
+  onEditTransaction?: (tx: { id: string; description: string | null; amount: number; type: 'entrada' | 'saida'; category_id: string | null; occurred_on: string }) => void;
+  onDeleteTransaction?: (id: string) => void;
 };
 
-const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo }: UltimosLancamentosProps) => {
-  const lancamentos = [
-    {
-      id: 1,
-      titulo: "Compras de Supermercado",
-      categoria: "Alimentação",
-      valor: -450.00,
-      tipo: "despesa",
-      icone: "shopping_cart"
-    },
-    {
-      id: 2,
-      titulo: "Salário",
-      categoria: "Receita",
-      valor: 3500.00,
-      tipo: "receita",
-      icone: "work"
-    },
-    {
-      id: 3,
-      titulo: "Aluguel de Apartamento",
-      categoria: "Moradia",
-      valor: -1200.00,
-      tipo: "despesa",
-      icone: "home"
-    },
-    {
-      id: 4,
-      titulo: "Jantar no Restaurante",
-      categoria: "Lazer",
-      valor: -150.00,
-      tipo: "despesa",
-      icone: "restaurant"
-    }
-  ];
+const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo, onEditTransaction, onDeleteTransaction }: UltimosLancamentosProps) => {
+  const [items, setItems] = useState<Array<{ id: string; description: string | null; amount: number; type: 'entrada' | 'saida'; category_id: string | null; occurred_on: string; category_name?: string }>>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        const user = auth.user;
+        if (!user) return;
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('id, description, amount, type, category_id, occurred_on, categories(name)')
+          .eq('user_id', user.id)
+          .order('occurred_on', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (error) throw error;
+        const processedData = (data || []).map((t: any) => ({
+          ...t,
+          category_name: t.categories?.name || null
+        }));
+        setItems(processedData);
+      } catch (e) {
+        console.error('Erro ao carregar lançamentos', e);
+      }
+    };
+    load();
+  }, []);
 
   const formatarValor = (valor: number) => {
     const sinal = valor >= 0 ? "+ " : "- ";
@@ -48,37 +44,59 @@ const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo }: UltimosLa
     return `${sinal}R$ ${valorAbsoluto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
 
+  const formatarData = (data: string) => {
+    return new Date(data).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   if (embedded) {
     return (
       <div className="flex flex-col h-full">
         <div className="p-4">
           <div className="space-y-3">
-            {lancamentos.map((lancamento) => (
+            {items.map((lancamento) => (
               <div 
                 key={lancamento.id}
                 className={`flex items-center p-4 bg-white rounded-lg shadow-sm border-l-4 ${
-                  lancamento.tipo === 'receita' ? 'border-[#3ecf8e]' : 'border-[#e03b3b]'
+                  lancamento.type === 'entrada' ? 'border-[#3ecf8e]' : 'border-[#FF7F6A]'
                 }`}
               >
-                <span className={`material-symbols-outlined mr-4 ${
-                  lancamento.tipo === 'receita' ? 'text-[#3ecf8e]' : 'text-[#e03b3b]'
-                }`}>
-                  {lancamento.icone}
-                </span>
                 <div className="flex-grow">
-                  <p className="font-semibold text-foreground">{lancamento.titulo}</p>
-                  <p className="text-sm text-muted-foreground">{lancamento.categoria}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground font-light">
+                      {formatarData(lancamento.occurred_on)}
+                    </span>
+                    <span className="text-sm font-light text-foreground">
+                      {lancamento.category_name || (lancamento.type === 'entrada' ? 'Entrada' : 'Saída')}
+                    </span>
+                    <span className={`text-sm font-light ${
+                      lancamento.type === 'entrada' ? 'text-[#3ecf8e]' : 'text-[#FF7F6A]'
+                    }`}>
+                      {formatarValor(lancamento.amount)}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className={`font-bold ${
-                    lancamento.tipo === 'receita' ? 'text-[#3ecf8e]' : 'text-[#e03b3b]'
-                  }`}>
-                    {formatarValor(lancamento.valor)}
-                  </p>
+                <div className="flex items-center gap-2 ml-4">
+                  <button 
+                    onClick={() => onEditTransaction?.(lancamento)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Editar"
+                    title="Editar"
+                  >
+                    <span className="material-symbols-outlined">edit</span>
+                  </button>
+                  <button
+                    onClick={() => onDeleteTransaction?.(lancamento.id)}
+                    className="text-gray-400 hover:text-red-500 transition-colors"
+                    aria-label="Excluir"
+                    title="Excluir"
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
                 </div>
-                <button className="ml-4 text-muted-foreground hover:text-foreground transition-colors">
-                  <span className="material-symbols-outlined">edit</span>
-                </button>
               </div>
             ))}
           </div>
@@ -103,32 +121,46 @@ const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo }: UltimosLa
       <div className="p-4">
         <h1 className="text-2xl font-bold text-foreground mb-6">Últimos Lançamentos</h1>
         <div className="space-y-3">
-          {lancamentos.map((lancamento) => (
+          {items.map((lancamento) => (
             <div 
               key={lancamento.id}
-              className={`flex items-center p-4 bg-background rounded-lg shadow-sm border-l-4 ${
-                lancamento.tipo === 'receita' ? 'border-[#3ecf8e]' : 'border-[#e03b3b]'
+              className={`flex items-center p-4 bg-white rounded-lg shadow-sm border-l-4 ${
+                lancamento.type === 'entrada' ? 'border-[#3ecf8e]' : 'border-[#FF7F6A]'
               }`}
             >
-              <span className={`material-symbols-outlined mr-4 ${
-                lancamento.tipo === 'receita' ? 'text-[#3ecf8e]' : 'text-[#e03b3b]'
-              }`}>
-                {lancamento.icone}
-              </span>
               <div className="flex-grow">
-                <p className="font-semibold text-foreground">{lancamento.titulo}</p>
-                <p className="text-sm text-muted-foreground">{lancamento.categoria}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground font-light">
+                    {formatarData(lancamento.occurred_on)}
+                  </span>
+                  <span className="text-sm font-light text-foreground">
+                    {lancamento.category_name || (lancamento.type === 'entrada' ? 'Entrada' : 'Saída')}
+                  </span>
+                  <span className={`text-sm font-light ${
+                    lancamento.type === 'entrada' ? 'text-[#3ecf8e]' : 'text-[#FF7F6A]'
+                  }`}>
+                    {formatarValor(lancamento.amount)}
+                  </span>
+                </div>
               </div>
-              <div className="text-right">
-                <p className={`font-bold ${
-                  lancamento.tipo === 'receita' ? 'text-[#3ecf8e]' : 'text-[#e03b3b]'
-                }`}>
-                  {formatarValor(lancamento.valor)}
-                </p>
-              </div>
-              <button className="ml-4 text-muted-foreground hover:text-foreground transition-colors">
-                <span className="material-symbols-outlined">edit</span>
-              </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onEditTransaction?.(lancamento)}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Editar"
+                      title="Editar"
+                    >
+                      <span className="material-symbols-outlined">edit</span>
+                    </button>
+                    <button
+                      onClick={() => onDeleteTransaction?.(lancamento.id)}
+                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      aria-label="Excluir"
+                      title="Excluir"
+                    >
+                      <span className="material-symbols-outlined">close</span>
+                    </button>
+                  </div>
             </div>
           ))}
         </div>

@@ -10,6 +10,9 @@ import NovoLancamento from './NovoLancamento';
 import UltimosLancamentos from './UltimosLancamentos';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import UserProfile from '@/components/UserProfile';
+import { supabase } from '@/integrations/supabase/client';
+import SettingsPanel from '@/components/SettingsPanel';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -21,6 +24,9 @@ const Dashboard = () => {
   type PanelType = 'ia' | 'calendario' | 'relatorios' | 'planilha' | 'empresa' | 'novo' | 'ultimos' | null;
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<PanelType>(null);
+  const [editTx, setEditTx] = useState<{
+    id: string; description: string | null; amount: number; type: 'entrada' | 'saida'; category_id: string | null; occurred_on: string
+  } | null>(null);
 
   // Redirect to onboarding if not completed
   useEffect(() => {
@@ -37,6 +43,119 @@ const Dashboard = () => {
   const [activeHeaderPanel, setActiveHeaderPanel] = useState<HeaderPanelType>(null);
   type TimeGranularity = 'D' | 'M' | 'A';
   const [timeGranularity, setTimeGranularity] = useState<TimeGranularity>('M');
+  const [recentTransactions, setRecentTransactions] = useState<Array<{ id: string; description: string | null; amount: number; type: 'entrada' | 'saida'; category_id: string | null; category_name?: string }>>([]);
+  const [expensesByCategory, setExpensesByCategory] = useState<Array<{ name: string; value: number; color: string }>>([]);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpense, setTotalExpense] = useState(0);
+
+  useEffect(() => {
+    const loadRecent = async () => {
+      try {
+        if (!user) return;
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('id, description, amount, type, category_id, categories(name)')
+          .eq('user_id', user.id)
+          .order('occurred_on', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(4);
+        if (error) throw error;
+        const processedData = (data || []).map((t: any) => ({
+          ...t,
+          category_name: t.categories?.name || null
+        }));
+        setRecentTransactions(processedData);
+      } catch (e) {
+        console.error('Erro ao carregar últimos lançamentos', e);
+      }
+    };
+    loadRecent();
+  }, [user]);
+
+  useEffect(() => {
+    const loadExpensesByCategory = async () => {
+      try {
+        if (!user) return;
+        
+        // Buscar transações de saída com suas categorias
+        const { data: transactions, error } = await supabase
+          .from('transactions')
+          .select(`
+            amount,
+            categories!inner(name, color)
+          `)
+          .eq('user_id', user.id)
+          .eq('type', 'saida')
+          .order('occurred_on', { ascending: false });
+
+        if (error) throw error;
+
+        // Agrupar por categoria e somar valores
+        const categoryTotals = new Map<string, { total: number; color: string }>();
+        
+        transactions?.forEach((transaction: any) => {
+          const categoryName = transaction.categories?.name || 'Sem categoria';
+          const categoryColor = transaction.categories?.color || '#9CA3AF';
+          const amount = Math.abs(transaction.amount);
+          
+          if (categoryTotals.has(categoryName)) {
+            categoryTotals.get(categoryName)!.total += amount;
+          } else {
+            categoryTotals.set(categoryName, { total: amount, color: categoryColor });
+          }
+        });
+
+        // Converter para formato do gráfico e ordenar por valor
+        const chartData = Array.from(categoryTotals.entries())
+          .map(([name, data]) => ({
+            name,
+            value: data.total,
+            color: data.color
+          }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 6); // Mostrar apenas as 6 maiores categorias
+
+        setExpensesByCategory(chartData);
+      } catch (e) {
+        console.error('Erro ao carregar gastos por categoria', e);
+      }
+    };
+    
+    loadExpensesByCategory();
+  }, [user]);
+
+  useEffect(() => {
+    const loadTotals = async () => {
+      try {
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('amount, type')
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        let income = 0;
+        let expense = 0;
+
+        (data || []).forEach((t: any) => {
+          if (t.type === 'entrada') {
+            income += Math.abs(Number(t.amount || 0));
+          } else if (t.type === 'saida') {
+            expense += Math.abs(Number(t.amount || 0));
+          }
+        });
+
+        setTotalIncome(income);
+        setTotalExpense(expense);
+      } catch (e) {
+        console.error('Erro ao carregar totais', e);
+      }
+    };
+
+    loadTotals();
+  }, [user]);
 
   const handleCloseTutorial = () => {
     setShowTutorial(false);
@@ -267,7 +386,7 @@ const Dashboard = () => {
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">Receitas</p>
                 <p className="text-lg font-bold text-foreground">
-                  R$ <CountUp from={0} to={0} separator="." duration={1} className="inline" />
+                  R$ <CountUp from={0} to={totalIncome} separator="." duration={1} className="inline" />
                 </p>
               </div>
               <div className="mt-2 text-center">
@@ -281,7 +400,7 @@ const Dashboard = () => {
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">Saldo Positivo</p>
                 <p className="text-lg font-bold text-foreground">
-                  R$ <CountUp from={0} to={0} separator="." duration={1} className="inline" />
+                  R$ <CountUp from={0} to={totalIncome - totalExpense} separator="." duration={1} className="inline" />
                 </p>
               </div>
               <div className="mt-2 flex items-center justify-center">
@@ -289,6 +408,60 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Expenses by Category Chart */}
+        <div className="p-4">
+          <h2 className="text-lg font-bold text-foreground mb-4">Maiores Gastos por Categoria</h2>
+          {expensesByCategory.length === 0 ? (
+            <div className="flex flex-col items-center justify-center space-y-3 py-8">
+              <span className="material-symbols-outlined text-4xl text-gray-300">pie_chart</span>
+              <p className="text-center text-base font-light text-muted-foreground">Seus gastos por categoria aparecerão aqui</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg p-4 shadow-sm">
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={expensesByCategory}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      labelLine={false}
+                    >
+                      {expensesByCategory.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number) => [
+                        `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                        'Valor'
+                      ]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Legend personalizada */}
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {expensesByCategory.map((entry, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: entry.color }}
+                    ></div>
+                    <span className="text-sm text-foreground truncate">
+                      {entry.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Payment Reminders - Empty State */}
@@ -300,13 +473,33 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent Transactions - Empty State */}
+        {/* Recent Transactions */}
         <div className="px-4">
           <h2 className="py-3 pt-5 text-lg font-bold text-foreground">Lançamentos Recentes</h2>
-          <div className="flex flex-col items-center justify-center space-y-3 py-4">
-            <span className="material-symbols-outlined text-4xl text-gray-300">bar_chart_4_bars</span>
-            <p className="text-center text-base font-light text-muted-foreground">Ainda não há dados para aparecer aqui, adicione!</p>
-          </div>
+          {recentTransactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center space-y-3 py-4">
+              <span className="material-symbols-outlined text-4xl text-gray-300">bar_chart_4_bars</span>
+              <p className="text-center text-base font-light text-muted-foreground">Ainda não há dados para aparecer aqui, adicione!</p>
+            </div>
+          ) : (
+            <div className="space-y-3 py-2">
+              {recentTransactions.map((t) => (
+                <div key={t.id} className={`flex items-center p-4 bg-white rounded-lg shadow-sm border-l-4 ${t.type === 'entrada' ? 'border-[#3ecf8e]' : 'border-[#FF7F6A]'}`}>
+                  <span className={`material-symbols-outlined mr-4 ${t.type === 'entrada' ? 'text-[#3ecf8e]' : 'text-[#FF7F6A]'}`}>
+                    {t.type === 'entrada' ? 'trending_up' : 'trending_down'}
+                  </span>
+                  <div className="flex-grow">
+                    <p className="font-light text-foreground">{t.category_name || (t.type === 'entrada' ? 'Entrada' : 'Saída')}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-light ${t.type === 'entrada' ? 'text-[#3ecf8e]' : 'text-[#FF7F6A]'}`}>
+                      {`${t.type === 'entrada' ? '+' : '-'} R$ ${Math.abs(t.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Tutorial Overlay */}
@@ -417,7 +610,7 @@ const Dashboard = () => {
               </div>
             )}
             {activePanel === 'novo' && (
-              <NovoLancamento embedded onClose={() => setIsSheetOpen(false)} />
+              <NovoLancamento embedded onClose={() => { setIsSheetOpen(false); setEditTx(null); }} editTx={editTx} />
             )}
               {activePanel === 'empresa' && (
                 <EmBreveEmpresa embedded onClose={() => setIsSheetOpen(false)} />
@@ -428,7 +621,24 @@ const Dashboard = () => {
                 onClose={() => setIsSheetOpen(false)} 
                 onOpenNovo={() => {
                   setActivePanel('novo');
-                  // Não fechamos o sheet atual, apenas mudamos o painel
+                }}
+                onEditTransaction={(tx) => {
+                  setEditTx(tx);
+                  setActivePanel('novo');
+                }}
+                onDeleteTransaction={async (id) => {
+                  try {
+                    const { error } = await supabase
+                      .from('transactions')
+                      .delete()
+                      .eq('id', id)
+                      .eq('user_id', user?.id);
+                    if (error) throw error;
+                    // Recarregar a lista após exclusão
+                    window.location.reload();
+                  } catch (e) {
+                    console.error('Erro ao excluir', e);
+                  }
                 }}
               />
             )}
@@ -461,7 +671,7 @@ const Dashboard = () => {
                 />
               )}
               {activeHeaderPanel === 'settings' && (
-                <EmBreve embedded onClose={() => setIsHeaderSheetOpen(false)} />
+                <SettingsPanel user={user} profile={profile as any} />
               )}
               {activeHeaderPanel === 'help' && (
                 <EmBreve embedded onClose={() => setIsHeaderSheetOpen(false)} />

@@ -187,3 +187,4 @@ O **Seu Bolso na Mão** é uma aplicação financeira moderna construída com Re
 4. Relatórios e análises
 
 Este design system garante uma experiência consistente, moderna e acessível, focada na simplicidade e eficiência para gestão financeira pessoal.
+
