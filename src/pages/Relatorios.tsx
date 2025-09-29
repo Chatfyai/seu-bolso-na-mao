@@ -13,7 +13,7 @@ type RelatoriosProps = {
 
 const Relatorios = ({ embedded = false, onClose, startDate, endDate }: RelatoriosProps) => {
   const { user } = useAuth();
-  const [expensesByCategory, setExpensesByCategory] = useState<Array<{ name: string; value: number; color: string }>>([]);
+  const [expensesByCategory, setExpensesByCategory] = useState<Array<{ name: string; value: number; color: string; isReminder?: boolean }>>([]);
   type TimeGranularity = 'D' | 'M' | 'A';
   const [timeGranularity, setTimeGranularity] = useState<TimeGranularity>('M');
 
@@ -28,6 +28,7 @@ const Relatorios = ({ embedded = false, onClose, startDate, endDate }: Relatorio
           .select(`
             amount,
             occurred_on,
+            description,
             categories!inner(name, color)
           `)
           .eq('user_id', user.id)
@@ -45,27 +46,49 @@ const Relatorios = ({ embedded = false, onClose, startDate, endDate }: Relatorio
 
         if (error) throw error;
 
+        // Buscar lembretes ativos para identificar transações de lembretes
+        const { data: reminders, error: remindersError } = await supabase
+          .from('reminders')
+          .select('description')
+          .eq('user_id', user.id)
+          .eq('active', true);
+
+        if (remindersError) throw remindersError;
+
+        // Criar set com descrições dos lembretes
+        const reminderDescriptions = new Set(reminders?.map(r => r.description) || []);
+
         // Agrupar por categoria e somar valores
-        const categoryTotals = new Map<string, { total: number; color: string }>();
+        const categoryTotals = new Map<string, { total: number; color: string; isReminder: boolean }>();
         
         transactions?.forEach((transaction: any) => {
           const categoryName = transaction.categories?.name || 'Sem categoria';
           const categoryColor = transaction.categories?.color || '#9CA3AF';
           const amount = Math.abs(transaction.amount);
           
+          // Verificar se é uma transação de lembrete
+          const isReminder = reminderDescriptions.has(transaction.description);
+          
           if (categoryTotals.has(categoryName)) {
-            categoryTotals.get(categoryName)!.total += amount;
+            const existing = categoryTotals.get(categoryName)!;
+            existing.total += amount;
+            existing.isReminder = existing.isReminder || isReminder;
           } else {
-            categoryTotals.set(categoryName, { total: amount, color: categoryColor });
+            categoryTotals.set(categoryName, { 
+              total: amount, 
+              color: isReminder ? '#FF6B6B' : categoryColor, // Cor especial para lembretes
+              isReminder 
+            });
           }
         });
 
         // Converter para formato do gráfico e ordenar por valor
         const chartData = Array.from(categoryTotals.entries())
           .map(([name, data]) => ({
-            name,
+            name: data.isReminder ? `${name} (Lembrete)` : name,
             value: data.total,
-            color: data.color
+            color: data.color,
+            isReminder: data.isReminder
           }))
           .sort((a, b) => b.value - a.value)
           .slice(0, 6); // Mostrar apenas as 6 maiores categorias
@@ -106,7 +129,7 @@ const Relatorios = ({ embedded = false, onClose, startDate, endDate }: Relatorio
 };
 
 type RelatoriosContentProps = {
-  expensesByCategory: Array<{ name: string; value: number; color: string }>;
+  expensesByCategory: Array<{ name: string; value: number; color: string; isReminder?: boolean }>;
   timeGranularity: 'D' | 'M' | 'A';
   setTimeGranularity: (value: 'D' | 'M' | 'A') => void;
 };
@@ -192,10 +215,17 @@ const RelatoriosContent = ({ expensesByCategory, timeGranularity, setTimeGranula
           <div className="mt-6 grid grid-cols-2 gap-3">
             {expensesByCategory.map((entry, index) => (
               <div key={index} className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200">
-                <div 
-                  className="w-4 h-4 rounded-full flex-shrink-0" 
-                  style={{ backgroundColor: entry.color }}
-                ></div>
+                <div className="flex items-center space-x-2">
+                  <div 
+                    className="w-4 h-4 rounded-full flex-shrink-0" 
+                    style={{ backgroundColor: entry.color }}
+                  ></div>
+                  {entry.isReminder && (
+                    <span className="material-symbols-outlined text-sm text-[#FF6B6B]" title="Despesa de Lembrete">
+                      event_repeat
+                    </span>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-sm font-medium text-foreground truncate block">
                     {entry.name}

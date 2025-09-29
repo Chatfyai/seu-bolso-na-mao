@@ -124,6 +124,57 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      },
+      reminders: {
+        Row: {
+          id: string
+          user_id: string
+          description: string
+          amount: number
+          recurrence: string
+          day_of_month: number | null
+          interval_days: number | null
+          start_date: string
+          next_due_date: string
+          installments_total: number
+          installments_paid: number
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          description: string
+          amount: number
+          recurrence: string
+          day_of_month?: number | null
+          interval_days?: number | null
+          start_date: string
+          next_due_date: string
+          installments_total?: number
+          installments_paid?: number
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          description?: string
+          amount?: number
+          recurrence?: string
+          day_of_month?: number | null
+          interval_days?: number | null
+          start_date?: string
+          next_due_date?: string
+          installments_total?: number
+          installments_paid?: number
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

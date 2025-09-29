@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ArrowRight, Calendar } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/ui/use-toast';
 
 type LembretesPagamentoProps = {
   embedded?: boolean;
@@ -9,20 +12,95 @@ type LembretesPagamentoProps = {
 
 const LembretesPagamento = ({ embedded = false, onClose }: LembretesPagamentoProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [installments, setInstallments] = useState('1');
-  const [paymentDate, setPaymentDate] = useState('');
-  const [repetition, setRepetition] = useState('monthly');
+  const [paymentDay, setPaymentDay] = useState('');
+  // repetição mensal será assumida pela lógica de cálculo das parcelas no Dashboard
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const parseCurrencyPtBr = (value: string) => {
+    // aceita formatos "1.234,56" ou "1234,56" ou "1234.56"
+    const normalized = value
+      .replace(/\s/g, '')
+      .replace(/\./g, '')
+      .replace(/,/g, '.');
+    const num = Number(normalized);
+    return isNaN(num) ? NaN : num;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement reminder creation logic
-    console.log('Novo lembrete:', { description, amount, installments, paymentDate, repetition });
-    if (embedded && onClose) {
-      onClose();
-    } else {
-      navigate('/dashboard');
+    try {
+      if (!user) {
+        toast({ title: 'Sessão expirada', description: 'Faça login novamente.' });
+        navigate('/login');
+        return;
+      }
+      const trimmedDescription = description.trim();
+      if (!trimmedDescription) {
+        toast({ title: 'Informe a descrição', description: 'Ex.: Conta de Luz' });
+        return;
+      }
+      const parsedAmount = parseCurrencyPtBr(amount);
+      if (!isFinite(parsedAmount) || parsedAmount <= 0) {
+        toast({ title: 'Informe um valor válido', description: 'Use formato 100,00' });
+        return;
+      }
+      const totalInstallments = Math.max(1, parseInt(installments || '1', 10));
+      const dayOfMonth = parseInt(paymentDay, 10);
+      if (!dayOfMonth || dayOfMonth < 1 || dayOfMonth > 31) {
+        toast({ title: 'Informe um dia válido', description: 'Escolha um dia entre 1 e 31' });
+        return;
+      }
+      // criar primeira data de vencimento no próximo mês (ou este mês se ainda não passou o dia)
+      const now = new Date();
+      const currentDay = now.getDate();
+      let targetMonth = now.getMonth();
+      let targetYear = now.getFullYear();
+      
+      if (currentDay >= dayOfMonth) {
+        // se já passou o dia neste mês, usar próximo mês
+        targetMonth += 1;
+        if (targetMonth > 11) {
+          targetMonth = 0;
+          targetYear += 1;
+        }
+      }
+      
+      const firstDueIso = new Date(Date.UTC(targetYear, targetMonth, Math.min(dayOfMonth, new Date(targetYear, targetMonth + 1, 0).getDate())))
+        .toISOString()
+        .slice(0, 10);
+
+      setSaving(true);
+      // inserir na tabela reminders (já existente no seu projeto)
+      const { error } = await supabase.from('reminders').insert({
+        user_id: user.id,
+        description: trimmedDescription,
+        amount: parsedAmount,
+        recurrence: 'monthly',
+        day_of_month: dayOfMonth,
+        start_date: firstDueIso,
+        next_due_date: firstDueIso,
+        installments_total: totalInstallments,
+        installments_paid: 0,
+        active: true,
+      });
+      if (error) throw error;
+      toast({ title: 'Lembrete salvo', description: 'Seu lembrete foi criado com sucesso.' });
+      if (embedded && onClose) {
+        onClose();
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      console.error(err);
+      const description = err?.message || 'Tente novamente em instantes.';
+      toast({ title: 'Erro ao salvar', description });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -122,93 +200,34 @@ const LembretesPagamento = ({ embedded = false, onClose }: LembretesPagamentoPro
             </div>
           </div>
 
-          {/* Data do Pagamento */}
+          {/* Dia do Pagamento */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block" htmlFor="payment-date">
-              Data do Pagamento
+            <label className="text-sm font-medium text-gray-700 mb-2 block" htmlFor="payment-day">
+              Dia do Pagamento
             </label>
             <div className="relative flex items-center border-[1.5px] border-gray-200 rounded-lg h-[52px] focus-within:border-[#3ecf8e] focus-within:ring-1 focus-within:ring-[#3ecf8e] transition-all duration-300">
-              <input
-                className="w-full h-full bg-transparent text-gray-900 placeholder:text-gray-400 border-none rounded-lg pl-4 pr-12 focus:ring-0 focus:outline-none"
-                id="payment-date"
-                placeholder="Selecione a data"
-                type="text"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-              />
+              <select
+                className="w-full h-full bg-transparent text-gray-900 border-none rounded-lg pl-4 pr-12 focus:ring-0 focus:outline-none appearance-none"
+                id="payment-day"
+                value={paymentDay}
+                onChange={(e) => setPaymentDay(e.target.value)}
+              >
+                <option value="">Selecione o dia</option>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                  <option key={day} value={day.toString()}>
+                    Todo dia {day}
+                  </option>
+                ))}
+              </select>
               <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
                 <Calendar className="w-5 h-5 text-gray-400" />
               </div>
             </div>
           </div>
 
-          {/* Opções de Repetição */}
+          {/* Dica de repetição mensal */}
           <div className="pt-2">
-            <h2 className="text-lg font-semibold text-[#1f2937] mb-3">Opções de Repetição</h2>
-            <div className="space-y-3">
-              <label 
-                className={`flex items-center p-4 h-[56px] rounded-xl cursor-pointer transition-all duration-300 border-2 ${
-                  repetition === 'monthly' 
-                    ? 'bg-[#f0fdf4] border-[#3ecf8e] shadow-[0_0_15px_rgba(62,207,142,0.2)]' 
-                    : 'bg-white border-gray-200'
-                }`}
-                style={{ paddingLeft: '20px', paddingRight: '20px' }}
-              >
-                <input
-                  checked={repetition === 'monthly'}
-                  onChange={() => setRepetition('monthly')}
-                  className="form-radio h-5 w-5 text-[#3ecf8e] bg-white border-gray-300 focus:ring-[#3ecf8e] focus:ring-offset-0"
-                  name="repetition"
-                  type="radio"
-                  value="monthly"
-                />
-                <span className={`ml-4 font-medium ${repetition === 'monthly' ? 'text-[#065f46]' : 'text-gray-700'}`}>
-                  Todo mês no dia 15
-                </span>
-              </label>
-
-              <label 
-                className={`flex items-center p-4 h-[56px] rounded-xl cursor-pointer transition-all duration-300 border-2 ${
-                  repetition === 'every30days' 
-                    ? 'bg-[#f0fdf4] border-[#3ecf8e] shadow-[0_0_15px_rgba(62,207,142,0.2)]' 
-                    : 'bg-white border-gray-200'
-                }`}
-                style={{ paddingLeft: '20px', paddingRight: '20px' }}
-              >
-                <input
-                  checked={repetition === 'every30days'}
-                  onChange={() => setRepetition('every30days')}
-                  className="form-radio h-5 w-5 text-[#3ecf8e] bg-white border-gray-300 focus:ring-[#3ecf8e] focus:ring-offset-0"
-                  name="repetition"
-                  type="radio"
-                  value="every30days"
-                />
-                <span className={`ml-4 font-medium ${repetition === 'every30days' ? 'text-[#065f46]' : 'text-gray-700'}`}>
-                  A cada 30 dias
-                </span>
-              </label>
-
-              <label 
-                className={`flex items-center p-4 h-[56px] rounded-xl cursor-pointer transition-all duration-300 border-2 ${
-                  repetition === 'custom' 
-                    ? 'bg-[#f0fdf4] border-[#3ecf8e] shadow-[0_0_15px_rgba(62,207,142,0.2)]' 
-                    : 'bg-white border-gray-200'
-                }`}
-                style={{ paddingLeft: '20px', paddingRight: '20px' }}
-              >
-                <input
-                  checked={repetition === 'custom'}
-                  onChange={() => setRepetition('custom')}
-                  className="form-radio h-5 w-5 text-[#3ecf8e] bg-white border-gray-300 focus:ring-[#3ecf8e] focus:ring-offset-0"
-                  name="repetition"
-                  type="radio"
-                  value="custom"
-                />
-                <span className={`ml-4 font-medium ${repetition === 'custom' ? 'text-[#065f46]' : 'text-gray-700'}`}>
-                  Personalizado
-                </span>
-              </label>
-            </div>
+            <p className="text-sm text-gray-500">Repetição mensal será calculada automaticamente a partir da primeira data.</p>
           </div>
         </form>
       </main>
@@ -217,10 +236,11 @@ const LembretesPagamento = ({ embedded = false, onClose }: LembretesPagamentoPro
       <footer className="fixed bottom-0 left-0 right-0 bg-white p-6">
         <div className="mx-auto max-w-md">
           <button
+            disabled={saving}
             onClick={handleSubmit}
             className="w-full bg-[#3ecf8e] text-white font-semibold py-4 px-4 rounded-xl shadow-[0_10px_20px_-5px_rgba(62,207,142,0.4)] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3ecf8e] transition-all duration-300 h-[56px] text-lg"
           >
-            Salvar
+            {saving ? 'Salvando...' : 'Salvar'}
           </button>
         </div>
       </footer>

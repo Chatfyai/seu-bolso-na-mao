@@ -24,8 +24,8 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
 
   const itemsPerView = 2; // Mostrar 2 cards por vez
   const maxIndex = Math.max(0, cards.length - itemsPerView);
-  // Calcular número de slides baseado no número de cards
-  const totalSlides = Math.ceil(cards.length / itemsPerView);
+  // Calcular número de slides baseado no número de cards - ajuste para mostrar todos os cards
+  const totalSlides = Math.max(1, cards.length - 1); // Para 4 cards = 3 slides
   const threshold = 50; // Distância mínima para trocar de slide
 
 
@@ -134,9 +134,9 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
         onTouchEnd={handleTouchEnd}
       >
         <div 
-          className={`flex gap-4 transition-transform duration-300 ease-out ${isDragging ? 'transition-none' : ''}`}
+          className={`flex gap-4 transition-transform duration-400 ease-in-out ${isDragging ? 'transition-none' : ''}`}
           style={{ 
-            transform: `translateX(calc(-${currentIndex * (100 / itemsPerView)}% + ${isDragging ? dragDistance : 0}px))`
+            transform: `translateX(calc(-${currentIndex * 50}% + ${isDragging ? dragDistance : 0}px))`
           }}
         >
           {cards.map((card) => (
@@ -164,14 +164,14 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
 
       {/* Navigation Dots - Only show if more cards than visible */}
       {cards.length > itemsPerView && (
-        <div className="flex justify-center mt-4 gap-2">
+        <div className="flex justify-center mt-4 gap-3">
           {Array.from({ length: totalSlides }).map((_, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`w-2 h-2 rounded-full transition-colors ${
+              className={`w-2 h-2 rounded-full transition-all duration-300 transform hover:scale-110 ${
                 index === currentIndex 
-                  ? 'bg-[#3ecf8e]' 
+                  ? 'bg-[#3ecf8e] shadow-sm scale-110' 
                   : 'bg-gray-300 hover:bg-gray-400'
               }`}
               aria-label={`Ir para slide ${index + 1}`}

@@ -15,6 +15,9 @@ import FinancialCarousel from '@/components/FinancialCarousel';
 import UserProfile from '@/components/UserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import SettingsPanel from '@/components/SettingsPanel';
+import ReminderEditModal from '@/components/ReminderEditModal';
+import AdvertisementsCarousel from '@/components/AdvertisementsCarousel';
+import { Tables } from '@/integrations/supabase/types';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -48,6 +51,9 @@ const Dashboard = () => {
   const [recentTransactions, setRecentTransactions] = useState<Array<{ id: string; description: string | null; amount: number; type: 'entrada' | 'saida'; category_id: string | null; category_name?: string }>>([]);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
+  const [reminders, setReminders] = useState<Array<Tables<{ schema: 'public' }, 'reminders'>>>([]);
+  const [selectedReminder, setSelectedReminder] = useState<Tables<{ schema: 'public' }, 'reminders'> | null>(null);
+  const [monthlyFixedExpenses, setMonthlyFixedExpenses] = useState(0);
   // Função para obter o primeiro e último dia do mês atual
   const getCurrentMonthRange = () => {
     const now = new Date();
@@ -81,8 +87,58 @@ const Dashboard = () => {
     }
   };
 
+  const loadReminders = async () => {
+    try {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('reminders' as 'reminders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('next_due_date', { ascending: true })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setReminders(data || []);
+      
+      // Calcular despesas mensais fixas
+      calculateMonthlyFixedExpenses(data || []);
+    } catch (e) {
+      console.error('Erro ao carregar lembretes', e);
+    }
+  };
+
+  const calculateMonthlyFixedExpenses = (remindersData: Tables<{ schema: 'public' }, 'reminders'>[]) => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    let total = 0;
+    
+    remindersData.forEach(reminder => {
+      // Só contar lembretes ativos
+      if (!reminder.active) return;
+      
+      // Verificar se o lembrete tem vencimento neste mês
+      const nextDue = new Date(reminder.next_due_date);
+      const isCurrentMonth = nextDue.getMonth() === currentMonth && nextDue.getFullYear() === currentYear;
+      
+      // Verificar se já foi pago neste mês (comparando installments_paid com o que deveria ter sido pago até agora)
+      const startDate = new Date(reminder.start_date);
+      const monthsSinceStart = (currentYear - startDate.getFullYear()) * 12 + (currentMonth - startDate.getMonth());
+      const expectedPayments = Math.min(monthsSinceStart + 1, reminder.installments_total);
+      const isPaidThisMonth = reminder.installments_paid >= expectedPayments;
+      
+      // Se tem vencimento neste mês e não foi pago, somar ao total
+      if (isCurrentMonth && !isPaidThisMonth) {
+        total += Number(reminder.amount);
+      }
+    });
+    
+    setMonthlyFixedExpenses(total);
+  };
+
   useEffect(() => {
     loadRecentTransactions();
+    loadReminders();
   }, [user]);
 
 
@@ -138,7 +194,7 @@ const Dashboard = () => {
 
   // Função para atualizar todos os dados
   const refreshData = async () => {
-    await Promise.all([loadTotals(), loadRecentTransactions()]);
+    await Promise.all([loadTotals(), loadRecentTransactions(), loadReminders()]);
   };
 
   // Função para verificar e atualizar para o mês atual se necessário
@@ -184,6 +240,13 @@ const Dashboard = () => {
       icon: 'trending_down',
       title: 'Despesas Totais',
       value: totalExpense,
+      color: 'text-[#FF7F6A]'
+    },
+    {
+      id: 'fixed',
+      icon: 'event_repeat',
+      title: 'Despesas Mensais Fixas',
+      value: monthlyFixedExpenses,
       color: 'text-[#FF7F6A]'
     }
   ];
@@ -368,6 +431,11 @@ const Dashboard = () => {
         </div>
 
 
+        {/* Advertisements Carousel */}
+        <div className="px-4 mb-4 mt-6">
+          <AdvertisementsCarousel />
+        </div>
+
         {/* Financial Summary - Empty State */}
         <div className="p-4">
             <div className="flex items-center justify-start gap-3">
@@ -382,18 +450,51 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Payment Reminders - Empty State */}
+        {/* Payment Reminders */}
         <div className="px-4">
-          <h2 className="py-3 text-lg font-bold text-foreground">Lembretes de Pagamento</h2>
-          <div className="flex flex-col items-center justify-center space-y-3 py-4">
-            <span className="material-symbols-outlined text-4xl text-gray-300">description</span>
-            <p className="text-center text-base font-light text-muted-foreground">Ainda não há dados para aparecer aqui, adicione!</p>
-          </div>
+          <h2 className="py-3 text-lg font-bold" style={{ color: '#C2C6CE' }}>Lembretes de Pagamento</h2>
+          {reminders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center space-y-3 py-4">
+              <span className="material-symbols-outlined text-4xl text-gray-300">description</span>
+              <p className="text-center text-base font-light text-muted-foreground">Ainda não há dados para aparecer aqui, adicione!</p>
+            </div>
+          ) : (
+            <div className="space-y-3 py-2">
+              {reminders.map((r) => {
+                // cálculo usando estrutura da tabela reminders
+                const nextDue = new Date(r.next_due_date + 'T00:00:00Z');
+                const now = new Date();
+                const msPerDay = 24 * 60 * 60 * 1000;
+                const daysRemaining = Math.ceil((nextDue.getTime() - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) / msPerDay);
+                const currentInstallmentNumber = Math.min(r.installments_total, Math.max(1, r.installments_paid + 1));
+                const finished = r.installments_paid >= r.installments_total;
+                return (
+                  <div 
+                    key={r.id} 
+                    onClick={() => setSelectedReminder(r)}
+                    className={`flex items-center p-4 bg-white rounded-lg shadow-sm border-l-4 cursor-pointer transition-all duration-200 hover:shadow-md ${finished ? 'border-gray-300 opacity-70' : 'border-[#3ecf8e]'}`}
+                  >
+                    <span className={`material-symbols-outlined mr-4 ${finished ? 'text-gray-400' : 'text-[#3ecf8e]'}`}>
+                      event_upcoming
+                    </span>
+                    <div className="flex-grow">
+                      <p className="font-medium text-foreground">{r.description}</p>
+                      <p className="text-sm text-muted-foreground">Parcela {currentInstallmentNumber}/{r.installments_total}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-[#3ecf8e]">{`R$ ${Number(r.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</p>
+                      <p className="text-sm text-muted-foreground">{daysRemaining >= 0 ? `${daysRemaining} dia${daysRemaining === 1 ? '' : 's'}` : `${Math.abs(daysRemaining)} dia${Math.abs(daysRemaining) === 1 ? '' : 's'} atrasado`}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Recent Transactions */}
         <div className="px-4">
-          <h2 className="py-3 pt-5 text-lg font-bold text-foreground">Lançamentos Recentes</h2>
+          <h2 className="py-3 pt-5 text-lg font-bold" style={{ color: '#C2C6CE' }}>Lançamentos Recentes</h2>
           {recentTransactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center space-y-3 py-4">
               <span className="material-symbols-outlined text-4xl text-gray-300">bar_chart_4_bars</span>
@@ -407,7 +508,7 @@ const Dashboard = () => {
                     {t.type === 'entrada' ? 'trending_up' : 'trending_down'}
                   </span>
                   <div className="flex-grow">
-                    <p className="font-light text-foreground">{t.category_name || (t.type === 'entrada' ? 'Entrada' : 'Saída')}</p>
+                    <p className="font-light text-foreground">{t.category_name || t.description || (t.type === 'entrada' ? 'Entrada' : 'Saída')}</p>
                   </div>
                   <div className="text-right">
                     <p className={`font-light ${t.type === 'entrada' ? 'text-[#3ecf8e]' : 'text-[#FF7F6A]'}`}>
@@ -515,7 +616,7 @@ const Dashboard = () => {
               <EmBreve embedded onClose={() => setIsSheetOpen(false)} />
             )}
             {activePanel === 'calendario' && (
-              <LembretesPagamento embedded onClose={() => setIsSheetOpen(false)} />
+              <LembretesPagamento embedded onClose={() => { setIsSheetOpen(false); loadReminders(); }} />
             )}
             {activePanel === 'relatorios' && (
               <Relatorios 
@@ -606,6 +707,17 @@ const Dashboard = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Reminder Edit Modal */}
+      {selectedReminder && (
+        <ReminderEditModal
+          reminder={selectedReminder}
+          onClose={() => setSelectedReminder(null)}
+          onUpdate={() => {
+            refreshData(); // recarrega lembretes e transações
+          }}
+        />
+      )}
     </div>
   );
 };
