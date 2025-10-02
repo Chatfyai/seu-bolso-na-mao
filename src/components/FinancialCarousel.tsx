@@ -55,7 +55,10 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
     setStartX(e.touches[0].pageX);
     setStartY(e.touches[0].pageY);
     setDragDistance(0);
-    e.preventDefault();
+    // Só prevenir default se não for scroll vertical
+    if (e.cancelable) {
+      e.preventDefault();
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -68,7 +71,9 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
     
     // Só processar se o movimento horizontal for maior que vertical (para evitar conflito com scroll vertical)
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      e.preventDefault();
+      if (e.cancelable) {
+        e.preventDefault();
+      }
       setDragDistance(deltaX);
     }
   };
@@ -124,7 +129,8 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
       {/* Carousel Container */}
       <div 
         ref={carouselRef}
-        className={`overflow-hidden touch-pan-y select-none w-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`overflow-hidden select-none w-full ${isDragging ? 'cursor-grabbing' : ''}`}
+        style={{ touchAction: 'pan-y pinch-zoom' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

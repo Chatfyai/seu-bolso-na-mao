@@ -23,7 +23,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, profile, loading, logout } = useAuth();
   const [accountType, setAccountType] = useState('Pessoa Física');
-  const [showTutorial, setShowTutorial] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   type PanelType = 'ia' | 'calendario' | 'relatorios' | 'planilha' | 'empresa' | 'novo' | 'ultimos' | null;
@@ -43,6 +43,18 @@ const Dashboard = () => {
       }
     }
   }, [user, profile, loading, navigate]);
+
+  // Check if it's the first time user is accessing the dashboard
+  useEffect(() => {
+    if (user) {
+      const tutorialKey = `tutorial_shown_${user.id}`;
+      const hasSeenTutorial = localStorage.getItem(tutorialKey);
+      
+      if (!hasSeenTutorial) {
+        setShowTutorial(true);
+      }
+    }
+  }, [user]);
   type HeaderPanelType = 'profile' | 'settings' | 'help' | null;
   const [isHeaderSheetOpen, setIsHeaderSheetOpen] = useState(false);
   const [activeHeaderPanel, setActiveHeaderPanel] = useState<HeaderPanelType>(null);
@@ -54,6 +66,7 @@ const Dashboard = () => {
   const [reminders, setReminders] = useState<Array<Tables<{ schema: 'public' }, 'reminders'>>>([]);
   const [selectedReminder, setSelectedReminder] = useState<Tables<{ schema: 'public' }, 'reminders'> | null>(null);
   const [monthlyFixedExpenses, setMonthlyFixedExpenses] = useState(0);
+  const [showAllReminders, setShowAllReminders] = useState(false);
   // Função para obter o primeiro e último dia do mês atual
   const getCurrentMonthRange = () => {
     const now = new Date();
@@ -148,7 +161,7 @@ const Dashboard = () => {
 
       let query = supabase
         .from('transactions')
-        .select('amount, type, occurred_on')
+        .select('amount, type, occurred_on, id')
         .eq('user_id', user.id);
 
       // Sempre aplicar filtro de data (padrão: mês atual)
@@ -157,6 +170,7 @@ const Dashboard = () => {
       
       const startDateStr = filterStartDate.toISOString().split('T')[0];
       const endDateStr = filterEndDate.toISOString().split('T')[0];
+      
       query = query.gte('occurred_on', startDateStr).lte('occurred_on', endDateStr);
 
       const { data, error } = await query;
@@ -182,7 +196,9 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    loadTotals();
+    if (user) {
+      loadTotals();
+    }
   }, [user, startDate, endDate]);
 
   // Verificar e atualizar para o mês atual quando o componente é montado ou quando o usuário muda
@@ -212,6 +228,12 @@ const Dashboard = () => {
 
   const handleCloseTutorial = () => {
     setShowTutorial(false);
+    
+    // Mark tutorial as seen for this user
+    if (user) {
+      const tutorialKey = `tutorial_shown_${user.id}`;
+      localStorage.setItem(tutorialKey, 'true');
+    }
   };
 
   const handleDateRangeChange = (newStartDate: Date | null, newEndDate: Date | null) => {
@@ -233,7 +255,7 @@ const Dashboard = () => {
       icon: 'account_balance_wallet',
       title: 'Saldo',
       value: totalIncome - totalExpense,
-      color: 'text-[#3ecf8e]'
+      color: (totalIncome - totalExpense) >= 0 ? 'text-[#3ecf8e]' : 'text-[#FF7F6A]'
     },
     {
       id: 'expenses',
@@ -459,8 +481,9 @@ const Dashboard = () => {
               <p className="text-center text-base font-light text-muted-foreground">Ainda não há dados para aparecer aqui, adicione!</p>
             </div>
           ) : (
+            <>
             <div className="space-y-3 py-2">
-              {reminders.map((r) => {
+              {(showAllReminders ? reminders : reminders.slice(0, 4)).map((r) => {
                 // cálculo usando estrutura da tabela reminders
                 const nextDue = new Date(r.next_due_date + 'T00:00:00Z');
                 const now = new Date();
@@ -478,18 +501,54 @@ const Dashboard = () => {
                       event_upcoming
                     </span>
                     <div className="flex-grow">
-                      <p className="font-medium text-foreground">{r.description}</p>
-                      <p className="text-sm text-muted-foreground">Parcela {currentInstallmentNumber}/{r.installments_total}</p>
+                      <p className="font-medium text-gray-800">{r.description}</p>
+                      <p className="text-sm text-gray-600">Parcela {currentInstallmentNumber}/{r.installments_total}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-medium text-[#3ecf8e]">{`R$ ${Number(r.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</p>
-                      <p className="text-sm text-muted-foreground">{daysRemaining >= 0 ? `${daysRemaining} dia${daysRemaining === 1 ? '' : 's'}` : `${Math.abs(daysRemaining)} dia${Math.abs(daysRemaining) === 1 ? '' : 's'} atrasado`}</p>
+                      <p className="text-sm text-gray-600">{daysRemaining >= 0 ? `${daysRemaining} dia${daysRemaining === 1 ? '' : 's'}` : `${Math.abs(daysRemaining)} dia${Math.abs(daysRemaining) === 1 ? '' : 's'} atrasado`}</p>
                     </div>
                   </div>
                 );
               })}
             </div>
+            {reminders.length > 4 && (
+              <div className="flex justify-center pt-3 pb-2">
+                <button
+                  onClick={() => setShowAllReminders(!showAllReminders)}
+                  className="text-sm font-light text-[#3ecf8e] hover:underline"
+                >
+                  {showAllReminders ? 'Ver menos' : 'Ver mais'}
+                </button>
+              </div>
+            )}
+            </>
           )}
+        </div>
+
+        {/* Banner Card - Add Categories */}
+        <div className="px-4 py-4">
+          <div 
+            onClick={() => {
+              setActiveHeaderPanel('settings');
+              setIsHeaderSheetOpen(true);
+            }}
+            className="relative rounded-xl overflow-hidden shadow-lg h-24 cursor-pointer bg-gradient-to-r from-[#3ecf8e] to-[#2ab676]"
+          >
+            <div className="absolute inset-0 p-4 flex items-center justify-between">
+              <div className="flex-1 text-white">
+                <h3 className="text-base font-bold mb-1">Personalize suas Categorias</h3>
+                <p className="text-xs opacity-90">Adicione e organize suas categorias de gastos</p>
+              </div>
+              
+              <div className="w-16 h-16 bg-white/20 rounded-lg flex items-center justify-center">
+                <span className="material-symbols-outlined text-white text-3xl">
+                  category
+                </span>
+              </div>
+            </div>
+            <div className="absolute inset-0 bg-black/5"></div>
+          </div>
         </div>
 
         {/* Recent Transactions */}
@@ -508,7 +567,7 @@ const Dashboard = () => {
                     {t.type === 'entrada' ? 'trending_up' : 'trending_down'}
                   </span>
                   <div className="flex-grow">
-                    <p className="font-light text-foreground">{t.category_name || t.description || (t.type === 'entrada' ? 'Entrada' : 'Saída')}</p>
+                    <p className="font-light text-gray-800">{t.category_name || t.description || (t.type === 'entrada' ? 'Entrada' : 'Saída')}</p>
                   </div>
                   <div className="text-right">
                     <p className={`font-light ${t.type === 'entrada' ? 'text-[#3ecf8e]' : 'text-[#FF7F6A]'}`}>
@@ -600,7 +659,7 @@ const Dashboard = () => {
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent side="bottom" className="p-0 h-screen">
           <div className="flex flex-col h-full">
-            <div className="bg-background border-b sticky top-0 z-10">
+            <div className="bg-background border-b">
               <div className="px-4 sm:px-5 h-14 flex items-center justify-between min-h-[56px]">
                 <h2 className="text-base font-semibold text-foreground truncate">{panelTitle}</h2>
                 <button 
@@ -678,7 +737,7 @@ const Dashboard = () => {
       <Sheet open={isHeaderSheetOpen} onOpenChange={setIsHeaderSheetOpen}>
         <SheetContent side="right" className="p-0 h-screen w-full sm:max-w-none max-w-none">
           <div className="flex flex-col h-full">
-            <div className="bg-background border-b sticky top-0 z-10">
+            <div className="bg-background border-b">
               <div className="px-4 sm:px-5 h-14 flex items-center justify-between min-h-[56px]">
                 <h2 className="text-base font-semibold text-foreground truncate">{headerPanelTitle}</h2>
                 <button 

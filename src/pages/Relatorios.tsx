@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 type RelatoriosProps = {
@@ -14,8 +14,62 @@ type RelatoriosProps = {
 const Relatorios = ({ embedded = false, onClose, startDate, endDate }: RelatoriosProps) => {
   const { user } = useAuth();
   const [expensesByCategory, setExpensesByCategory] = useState<Array<{ name: string; value: number; color: string; isReminder?: boolean }>>([]);
+  const [monthlyData, setMonthlyData] = useState<Array<{ mes: string; gastos: number; receitas: number }>>([]);
   type TimeGranularity = 'D' | 'M' | 'A';
   const [timeGranularity, setTimeGranularity] = useState<TimeGranularity>('M');
+
+  const loadMonthlyData = async () => {
+    try {
+      if (!user) return;
+
+      const currentYear = new Date().getFullYear();
+      const monthlyTotals: { [key: string]: { gastos: number; receitas: number } } = {};
+
+      // Inicializar todos os meses do ano com valores zero
+      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      monthNames.forEach(month => {
+        monthlyTotals[month] = { gastos: 0, receitas: 0 };
+      });
+
+      // Buscar todas as transações do ano atual
+      const startOfYear = `${currentYear}-01-01`;
+      const endOfYear = `${currentYear}-12-31`;
+
+      const { data: transactions, error } = await supabase
+        .from('transactions')
+        .select('amount, type, occurred_on')
+        .eq('user_id', user.id)
+        .gte('occurred_on', startOfYear)
+        .lte('occurred_on', endOfYear);
+
+      if (error) throw error;
+
+      // Agrupar por mês
+      transactions?.forEach((transaction: any) => {
+        const transactionDate = new Date(transaction.occurred_on);
+        const monthIndex = transactionDate.getMonth();
+        const monthName = monthNames[monthIndex];
+        const amount = Math.abs(transaction.amount);
+
+        if (transaction.type === 'saida') {
+          monthlyTotals[monthName].gastos += amount;
+        } else if (transaction.type === 'entrada') {
+          monthlyTotals[monthName].receitas += amount;
+        }
+      });
+
+      // Converter para array no formato esperado pelo gráfico
+      const chartData = monthNames.map(month => ({
+        mes: month,
+        gastos: monthlyTotals[month].gastos,
+        receitas: monthlyTotals[month].receitas
+      }));
+
+      setMonthlyData(chartData);
+    } catch (e) {
+      console.error('Erro ao carregar dados mensais', e);
+    }
+  };
 
   useEffect(() => {
     const loadExpensesByCategory = async () => {
@@ -100,6 +154,7 @@ const Relatorios = ({ embedded = false, onClose, startDate, endDate }: Relatorio
     };
     
     loadExpensesByCategory();
+    loadMonthlyData();
   }, [user, startDate, endDate]);
 
   if (!embedded) {
@@ -109,6 +164,7 @@ const Relatorios = ({ embedded = false, onClose, startDate, endDate }: Relatorio
           <h1 className="text-2xl font-bold text-foreground mb-6">Relatórios</h1>
           <RelatoriosContent 
             expensesByCategory={expensesByCategory}
+            monthlyData={monthlyData}
             timeGranularity={timeGranularity}
             setTimeGranularity={setTimeGranularity}
           />
@@ -121,6 +177,7 @@ const Relatorios = ({ embedded = false, onClose, startDate, endDate }: Relatorio
     <div className="p-4">
       <RelatoriosContent 
         expensesByCategory={expensesByCategory}
+        monthlyData={monthlyData}
         timeGranularity={timeGranularity}
         setTimeGranularity={setTimeGranularity}
       />
@@ -130,49 +187,80 @@ const Relatorios = ({ embedded = false, onClose, startDate, endDate }: Relatorio
 
 type RelatoriosContentProps = {
   expensesByCategory: Array<{ name: string; value: number; color: string; isReminder?: boolean }>;
+  monthlyData: Array<{ mes: string; gastos: number; receitas: number }>;
   timeGranularity: 'D' | 'M' | 'A';
   setTimeGranularity: (value: 'D' | 'M' | 'A') => void;
 };
 
-const RelatoriosContent = ({ expensesByCategory, timeGranularity, setTimeGranularity }: RelatoriosContentProps) => {
+const RelatoriosContent = ({ expensesByCategory, monthlyData, timeGranularity, setTimeGranularity }: RelatoriosContentProps) => {
   return (
     <div className="space-y-6">
-      {/* Header com filtros de tempo */}
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-foreground">Gastos por Categoria</h2>
-        <ToggleGroup
-          type="single"
-          size="sm"
-          value={timeGranularity}
-          onValueChange={(val) => {
-            if (val === 'D' || val === 'M' || val === 'A') {
-              setTimeGranularity(val);
-            }
-          }}
-          aria-label="Selecionar período"
-        >
-          <ToggleGroupItem
-            value="D"
-            aria-label="Dia"
-            className="rounded-full w-9 h-9 p-0 text-sm font-semibold text-[#3ecf8e] data-[state=on]:bg-[#3ecf8e] data-[state=on]:text-white"
-          >
-            D
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value="M"
-            aria-label="Mês"
-            className="rounded-full w-9 h-9 p-0 text-sm font-semibold text-[#3ecf8e] data-[state=on]:bg-[#3ecf8e] data-[state=on]:text-white"
-          >
-            M
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value="A"
-            aria-label="Ano"
-            className="rounded-full w-9 h-9 p-0 text-sm font-semibold text-[#3ecf8e] data-[state=on]:bg-[#3ecf8e] data-[state=on]:text-white"
-          >
-            A
-          </ToggleGroupItem>
-        </ToggleGroup>
+
+      {/* Título principal */}
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-bold text-foreground mb-2">Despesas Mensal Atual</h2>
+        <p className="text-sm font-light text-muted-foreground">Acompanhe a evolução dos seus gastos e receitas ao longo do ano</p>
+      </div>
+
+      {/* Gráfico de Linha - Gastos e Receitas Mensais */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h3 className="text-lg font-bold text-foreground mb-4">Gastos e Receitas - Ano Atual</h3>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="mes" 
+                stroke="#666"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis 
+                stroke="#666"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+              />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'white',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                }}
+                formatter={(value: number, name: string) => [
+                  `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                  name === 'gastos' ? 'Gastos' : 'Receitas'
+                ]}
+                labelFormatter={(label) => `Mês: ${label}`}
+              />
+              <Legend 
+                wrapperStyle={{ paddingTop: '20px' }}
+                formatter={(value) => value === 'gastos' ? 'Gastos' : 'Receitas'}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="gastos" 
+                stroke="#FF7F6A" 
+                strokeWidth={3}
+                dot={{ fill: '#FF7F6A', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: '#FF7F6A', strokeWidth: 2 }}
+                name="Gastos"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="receitas" 
+                stroke="#3ecf8e" 
+                strokeWidth={3}
+                dot={{ fill: '#3ecf8e', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: '#3ecf8e', strokeWidth: 2 }}
+                name="Receitas"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Gráfico de Pizza */}

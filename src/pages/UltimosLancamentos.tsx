@@ -11,6 +11,8 @@ type UltimosLancamentosProps = {
 
 const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo, onEditTransaction, onDeleteTransaction }: UltimosLancamentosProps) => {
   const [items, setItems] = useState<Array<{ id: string; description: string | null; amount: number; type: 'entrada' | 'saida'; category_id: string | null; occurred_on: string; category_name?: string }>>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [deletingItems, setDeletingItems] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const load = async () => {
@@ -52,6 +54,36 @@ const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo, onEditTrans
     });
   };
 
+  const handleDeleteClick = (id: string) => {
+    setShowDeleteConfirm(id);
+  };
+
+  const handleDeleteConfirm = async (id: string) => {
+    // Adicionar o item à lista de itens sendo deletados para animação
+    setDeletingItems(prev => new Set(prev).add(id));
+    
+    // Aguardar um pouco para a animação
+    setTimeout(async () => {
+      // Chamar a função de exclusão
+      await onDeleteTransaction?.(id);
+      
+      // Remover o item da lista local
+      setItems(prev => prev.filter(item => item.id !== id));
+      
+      // Limpar estados
+      setShowDeleteConfirm(null);
+      setDeletingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }, 300); // 300ms para a animação
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(null);
+  };
+
   if (embedded) {
     return (
       <div className="flex flex-col h-full">
@@ -60,8 +92,12 @@ const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo, onEditTrans
             {items.map((lancamento) => (
               <div 
                 key={lancamento.id}
-                className={`flex items-center p-4 bg-white rounded-lg shadow-sm border-l-4 ${
+                className={`flex items-center p-4 bg-white rounded-lg shadow-sm border-l-4 transition-all duration-300 ${
                   lancamento.type === 'entrada' ? 'border-[#3ecf8e]' : 'border-[#FF7F6A]'
+                } ${
+                  deletingItems.has(lancamento.id) 
+                    ? 'transform translate-x-full opacity-0' 
+                    : 'transform translate-x-0 opacity-100'
                 }`}
               >
                 <div className="flex-grow">
@@ -89,7 +125,7 @@ const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo, onEditTrans
                     <span className="material-symbols-outlined">edit</span>
                   </button>
                   <button
-                    onClick={() => onDeleteTransaction?.(lancamento.id)}
+                    onClick={() => handleDeleteClick(lancamento.id)}
                     className="text-gray-400 hover:text-red-500 transition-colors"
                     aria-label="Excluir"
                     title="Excluir"
@@ -111,6 +147,41 @@ const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo, onEditTrans
             <span className="material-symbols-outlined text-3xl">add</span>
           </button>
         </div>
+
+        {/* Modal de Confirmação */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <span className="material-symbols-outlined text-red-600">warning</span>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Excluir lançamento
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Tem certeza que deseja excluir este lançamento?
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleDeleteCancel}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => handleDeleteConfirm(showDeleteConfirm)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                >
+                  Sim, excluir
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -124,8 +195,12 @@ const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo, onEditTrans
           {items.map((lancamento) => (
             <div 
               key={lancamento.id}
-              className={`flex items-center p-4 bg-white rounded-lg shadow-sm border-l-4 ${
+              className={`flex items-center p-4 bg-white rounded-lg shadow-sm border-l-4 transition-all duration-300 ${
                 lancamento.type === 'entrada' ? 'border-[#3ecf8e]' : 'border-[#FF7F6A]'
+              } ${
+                deletingItems.has(lancamento.id) 
+                  ? 'transform translate-x-full opacity-0' 
+                  : 'transform translate-x-0 opacity-100'
               }`}
             >
               <div className="flex-grow">
@@ -153,7 +228,7 @@ const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo, onEditTrans
                       <span className="material-symbols-outlined">edit</span>
                     </button>
                     <button
-                      onClick={() => onDeleteTransaction?.(lancamento.id)}
+                      onClick={() => handleDeleteClick(lancamento.id)}
                       className="text-gray-400 hover:text-red-500 transition-colors"
                       aria-label="Excluir"
                       title="Excluir"
@@ -175,6 +250,41 @@ const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo, onEditTrans
           <span className="material-symbols-outlined text-3xl">add</span>
         </button>
       </div>
+
+      {/* Modal de Confirmação */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <span className="material-symbols-outlined text-red-600">warning</span>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Excluir lançamento
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Tem certeza que deseja excluir este lançamento?
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleDeleteCancel}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleDeleteConfirm(showDeleteConfirm)}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Sim, excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
