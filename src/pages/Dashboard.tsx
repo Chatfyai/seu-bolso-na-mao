@@ -534,20 +534,14 @@ const Dashboard = () => {
               setIsHeaderSheetOpen(true);
             }}
             className="relative rounded-xl overflow-hidden shadow-lg h-24 cursor-pointer bg-gradient-to-r from-[#3ecf8e] to-[#2ab676]"
+            style={{
+              backgroundImage: 'url(/Banner.png?v=2)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
           >
-            <div className="absolute inset-0 p-4 flex items-center justify-between">
-              <div className="flex-1 text-white">
-                <h3 className="text-base font-bold mb-1">Personalize suas Categorias</h3>
-                <p className="text-xs opacity-90">Adicione e organize suas categorias de gastos</p>
-              </div>
-              
-              <div className="w-16 h-16 bg-white/20 rounded-lg flex items-center justify-center">
-                <span className="material-symbols-outlined text-white text-3xl">
-                  category
-                </span>
-              </div>
-            </div>
-            <div className="absolute inset-0 bg-black/5"></div>
+            <div className="absolute inset-0 bg-black/10"></div>
           </div>
         </div>
 

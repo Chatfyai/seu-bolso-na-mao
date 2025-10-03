@@ -152,9 +152,16 @@ const Login = () => {
     <div className="flex min-h-screen flex-col justify-between bg-white">
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-12 lg:px-8">
         <div className="w-full max-w-sm">
-           <header className="text-left mb-8">
+           <header className="text-center mb-8">
+             <div className="flex justify-center mb-4">
+               <img 
+                 src="/logo-pig.png" 
+                 alt="Logo Pig" 
+                 className="h-16 w-16 object-contain"
+               />
+             </div>
              <h1 className="text-3xl font-bold text-[#1a202c] tracking-tight" style={{fontSize: '28px'}}>
-               {isSignUp ? "Criar conta" : "Bem-vindo ao Finance"}
+               {isSignUp ? "Criar conta" : "Bem-vindo ao "}<span style={{color: '#22c55e'}}>PIG</span>
              </h1>
              <p className="mt-2 text-base text-[#4a5568]">
                {isSignUp ? "Crie sua conta para começar" : "Acesse sua conta para continuar"}
@@ -278,7 +285,7 @@ const Login = () => {
       <footer className="pb-6 px-6 text-center">
         <p className="text-xs text-gray-500 flex items-center justify-center gap-2">
           <span className="material-symbols-outlined text-base">shield</span>
-          Protegido por criptografia de nível bancário
+          Login protegido por supabase
         </p>
       </footer>
     </div>
