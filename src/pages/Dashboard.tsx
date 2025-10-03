@@ -659,18 +659,16 @@ const Dashboard = () => {
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent side="bottom" className="p-0 h-screen">
           <div className="flex flex-col h-full">
-            <div className="bg-background border-b">
-              <div className="px-4 sm:px-5 h-14 flex items-center justify-between min-h-[56px]">
-                <h2 className="text-base font-semibold text-foreground truncate">{panelTitle}</h2>
-                <button 
-                  onClick={() => setIsSheetOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
-                >
-                  <span className="material-symbols-outlined text-gray-500">close</span>
-                </button>
-              </div>
+            <div className="relative">
+              {/* Botão de fechar integrado */}
+              <button 
+                onClick={() => setIsSheetOpen(false)}
+                className="absolute top-4 right-4 flex items-center justify-center w-8 h-8 hover:bg-gray-100 rounded-full transition-colors z-20 bg-white shadow-sm"
+              >
+                <span className="material-symbols-outlined text-gray-500">close</span>
+              </button>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto pt-16">
             {activePanel === 'ia' && (
               <EmBreve embedded onClose={() => setIsSheetOpen(false)} />
             )}
@@ -737,18 +735,16 @@ const Dashboard = () => {
       <Sheet open={isHeaderSheetOpen} onOpenChange={setIsHeaderSheetOpen}>
         <SheetContent side="right" className="p-0 h-screen w-full sm:max-w-none max-w-none">
           <div className="flex flex-col h-full">
-            <div className="bg-background border-b">
-              <div className="px-4 sm:px-5 h-14 flex items-center justify-between min-h-[56px]">
-                <h2 className="text-base font-semibold text-foreground truncate">{headerPanelTitle}</h2>
-                <button 
-                  onClick={() => setIsHeaderSheetOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
-                >
-                  <span className="material-symbols-outlined text-gray-500">close</span>
-                </button>
-              </div>
+            <div className="relative">
+              {/* Botão de fechar integrado */}
+              <button 
+                onClick={() => setIsHeaderSheetOpen(false)}
+                className="absolute top-4 right-4 flex items-center justify-center w-8 h-8 hover:bg-gray-100 rounded-full transition-colors z-20 bg-white shadow-sm"
+              >
+                <span className="material-symbols-outlined text-gray-500">close</span>
+              </button>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto pt-16">
               {activeHeaderPanel === 'profile' && (
                 <UserProfile 
                   user={user} 

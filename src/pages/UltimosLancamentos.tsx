@@ -189,8 +189,17 @@ const UltimosLancamentos = ({ embedded = false, onClose, onOpenNovo, onEditTrans
   // Versão standalone (não embedded)
   return (
     <div className="flex flex-col h-screen justify-between bg-background">
-      <div className="p-4">
-        <h1 className="text-2xl font-bold text-foreground mb-6">Últimos Lançamentos</h1>
+      <div className="px-4 pt-16 pb-4 relative">
+        {/* Botão de fechar integrado na página */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 flex items-center justify-center w-8 h-8 hover:bg-gray-100 rounded-full transition-colors z-10 bg-white shadow-sm"
+          >
+            <span className="material-symbols-outlined text-gray-500">close</span>
+          </button>
+        )}
+        <h1 className="text-2xl font-bold text-foreground mb-6 pr-12">Últimos Lançamentos</h1>
         <div className="space-y-3">
           {items.map((lancamento) => (
             <div 

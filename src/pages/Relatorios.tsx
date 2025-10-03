@@ -160,8 +160,17 @@ const Relatorios = ({ embedded = false, onClose, startDate, endDate }: Relatorio
   if (!embedded) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="p-4">
-          <h1 className="text-2xl font-bold text-foreground mb-6">Relatórios</h1>
+        <div className="px-4 pt-16 pb-4 relative">
+          {/* Botão de fechar integrado na página */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 flex items-center justify-center w-8 h-8 hover:bg-gray-100 rounded-full transition-colors z-10 bg-white shadow-sm"
+            >
+              <span className="material-symbols-outlined text-gray-500">close</span>
+            </button>
+          )}
+          <h1 className="text-2xl font-bold text-foreground mb-6 pr-12">Relatórios</h1>
           <RelatoriosContent 
             expensesByCategory={expensesByCategory}
             monthlyData={monthlyData}
@@ -196,18 +205,14 @@ const RelatoriosContent = ({ expensesByCategory, monthlyData, timeGranularity, s
   return (
     <div className="space-y-6">
 
-      {/* Título principal */}
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-foreground mb-2">Despesas Mensal Atual</h2>
-        <p className="text-sm font-light text-muted-foreground">Acompanhe a evolução dos seus gastos e receitas ao longo do ano</p>
-      </div>
-
       {/* Gráfico de Linha - Gastos e Receitas Mensais */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-bold text-foreground mb-4">Gastos e Receitas - Ano Atual</h3>
-        <div className="h-80">
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="p-6 pb-4">
+          <h3 className="text-lg font-bold text-foreground mb-0">Gastos e Receitas - Ano Atual</h3>
+        </div>
+        <div className="h-[450px] w-full px-6 pb-6">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <LineChart data={monthlyData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis 
                 dataKey="mes" 
@@ -265,21 +270,29 @@ const RelatoriosContent = ({ expensesByCategory, monthlyData, timeGranularity, s
 
       {/* Gráfico de Pizza */}
       {expensesByCategory.length === 0 ? (
-        <div className="flex flex-col items-center justify-center space-y-3 py-12">
-          <span className="material-symbols-outlined text-6xl text-gray-300">pie_chart</span>
-          <p className="text-center text-lg font-light text-muted-foreground">Seus gastos por categoria aparecerão aqui</p>
-          <p className="text-center text-sm text-muted-foreground">Adicione algumas transações de saída para ver os dados</p>
+        <div className="bg-white rounded-lg shadow-sm">
+          <div className="px-6 pt-6 pb-4">
+            <h3 className="text-lg font-bold text-foreground mb-0">Gastos por Categoria</h3>
+          </div>
+          <div className="flex flex-col items-center justify-center space-y-3 h-[400px] w-full px-6 pb-6">
+            <span className="material-symbols-outlined text-6xl text-gray-300">pie_chart</span>
+            <p className="text-center text-lg font-light text-muted-foreground">Seus gastos por categoria aparecerão aqui</p>
+            <p className="text-center text-sm text-muted-foreground">Adicione algumas transações de saída para ver os dados</p>
+          </div>
         </div>
       ) : (
-        <div className="rounded-lg p-4">
-          <div className="h-80 w-full">
+        <div className="bg-white rounded-lg shadow-sm">
+          <div className="px-6 pt-6 pb-4">
+            <h3 className="text-lg font-bold text-foreground mb-0">Gastos por Categoria</h3>
+          </div>
+          <div className="h-[400px] w-full px-6 pb-6">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={expensesByCategory}
                   cx="50%"
                   cy="50%"
-                  outerRadius={120}
+                  outerRadius={140}
                   fill="#8884d8"
                   dataKey="value"
                   label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
