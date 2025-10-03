@@ -171,6 +171,105 @@ All colors MUST be HSL.
     }
   }
 
+  /* 
+   * Fixe o botão X sempre no topo da página
+   * Este CSS garante que o botão X dos componentes Radix UI (Dialog, Popover, Sheet)
+   * sempre permaneça fixo no canto superior direito da tela, mesmo quando o usuário rolar a página
+   */
+  [id^="radix-"] > div > div.relative > button {
+    position: fixed !important;
+    top: 16px !important;
+    right: 16px !important;
+    z-index: 9999 !important;
+    background: hsl(var(--background)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06) !important;
+    padding: 8px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease-in-out !important;
+  }
+
+  [id^="radix-"] > div > div.relative > button:hover {
+    background: hsl(var(--accent)) !important;
+    transform: scale(1.05) !important;
+  }
+
+  /* Para popovers específicos */
+  [data-radix-popover-content] button {
+    position: fixed !important;
+    top: 16px !important;
+    right: 16px !important;
+    z-index: 9999 !important;
+    background: hsl(var(--background)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06) !important;
+    padding: 8px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease-in-out !important;
+  }
+
+  /* Estilos alternativos para diferentes estruturas do Radix */
+  [id*="radix"] button[aria-label="Close"],
+  [id*="radix"] button[title="Close"],
+  [id*="radix"] button:has(svg[data-lucide="x"]),
+  [data-radix-dialog-content] button,
+  [data-radix-popover-content] button {
+    position: fixed !important;
+    top: 16px !important;
+    right: 16px !important;
+    z-index: 9999 !important;
+    background: hsl(var(--background)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06) !important;
+    padding: 8px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease-in-out !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* Hover effect para todos os botões X fixos */
+  [id*="radix"] button[aria-label="Close"]:hover,
+  [id*="radix"] button[title="Close"]:hover,
+  [id*="radix"] button:has(svg[data-lucide="x"]):hover,
+  [data-radix-dialog-content] button:hover,
+  [data-radix-popover-content] button:hover {
+    background: hsl(var(--accent)) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  /* Responsividade para mobile */
+  @media (max-width: 640px) {
+    [id^="radix-"] > div > div.relative > button,
+    [data-radix-popover-content] button,
+    [id*="radix"] button[aria-label="Close"],
+    [id*="radix"] button[title="Close"],
+    [id*="radix"] button:has(svg[data-lucide="x"]),
+    [data-radix-dialog-content] button {
+      top: 12px !important;
+      right: 12px !important;
+      min-width: 36px !important;
+      min-height: 36px !important;
+      padding: 6px !important;
+    }
+  }
+
   /* Login Form Styles */
   .form-input {
     height: 56px;
