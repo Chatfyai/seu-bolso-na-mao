@@ -16,6 +16,7 @@ const ReminderEditModal = ({ reminder, onClose, onUpdate }: ReminderEditModalPro
   const { toast } = useToast();
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
+  const [rawAmount, setRawAmount] = useState(''); // Valor numérico sem formatação
   const [installmentsTotal, setInstallmentsTotal] = useState('');
   const [paymentDay, setPaymentDay] = useState('');
   const [saving, setSaving] = useState(false);
@@ -25,19 +26,42 @@ const ReminderEditModal = ({ reminder, onClose, onUpdate }: ReminderEditModalPro
   useEffect(() => {
     if (reminder) {
       setDescription(reminder.description);
-      setAmount(Number(reminder.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
+      const amountValue = Number(reminder.amount);
+      setAmount(amountValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      setRawAmount(String(Math.round(amountValue * 100)));
       setInstallmentsTotal(reminder.installments_total.toString());
       setPaymentDay(reminder.day_of_month?.toString() || '');
     }
   }, [reminder]);
 
-  const parseCurrencyPtBr = (value: string) => {
-    const normalized = value
-      .replace(/\s/g, '')
-      .replace(/\./g, '')
-      .replace(/,/g, '.');
-    const num = Number(normalized);
-    return isNaN(num) ? NaN : num;
+  // Formatar valor automaticamente
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    
+    // Remove tudo que não é número
+    const numbersOnly = input.replace(/\D/g, '');
+    
+    // Se estiver vazio, limpar
+    if (numbersOnly === '') {
+      setAmount('');
+      setRawAmount('');
+      return;
+    }
+    
+    // Converter para número (em centavos)
+    const numericValue = parseInt(numbersOnly, 10);
+    
+    // Converter de centavos para reais
+    const valueInReais = numericValue / 100;
+    
+    // Formatar para exibição
+    const formatted = valueInReais.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    setRawAmount(numbersOnly);
+    setAmount(formatted);
   };
 
   const handleSave = async () => {
@@ -50,9 +74,11 @@ const ReminderEditModal = ({ reminder, onClose, onUpdate }: ReminderEditModalPro
         return;
       }
 
-      const parsedAmount = parseCurrencyPtBr(amount);
-      if (!isFinite(parsedAmount) || parsedAmount <= 0) {
-        toast({ title: 'Informe um valor válido', description: 'Use formato 100,00' });
+      // Usar rawAmount para calcular o valor correto
+      const parsedAmount = rawAmount ? parseInt(rawAmount, 10) / 100 : 0;
+      
+      if (!rawAmount || parsedAmount <= 0) {
+        toast({ title: 'Informe um valor válido', description: 'Digite um valor maior que zero' });
         return;
       }
 
@@ -234,11 +260,11 @@ const ReminderEditModal = ({ reminder, onClose, onUpdate }: ReminderEditModalPro
               <span className="pl-4 text-lg font-medium text-gray-500">R$</span>
               <input
                 className="w-full h-full bg-transparent text-gray-900 placeholder:text-gray-400 border-none rounded-lg pl-2 pr-4 text-lg font-medium focus:ring-0 focus:outline-none"
-                inputMode="decimal"
+                inputMode="numeric"
                 placeholder="0,00"
                 type="text"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={handleAmountChange}
               />
             </div>
           </div>

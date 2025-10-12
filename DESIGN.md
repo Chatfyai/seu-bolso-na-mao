@@ -1,8 +1,8 @@
-# 📱 Design System - Seu Bolso na Mão
+# 📱 Design System - Pig
 
 ## Visão Geral do Projeto
 
-O **Seu Bolso na Mão** é uma aplicação financeira moderna construída com React, TypeScript e Tailwind CSS, seguindo os princípios de design mobile-first e oferecendo uma experiência de usuário intuitiva para gestão de finanças pessoais.
+O **Pig** é uma aplicação financeira moderna construída com React, TypeScript e Tailwind CSS, seguindo os princípios de design mobile-first e oferecendo uma experiência de usuário intuitiva para gestão de finanças pessoais.
 
 ## 🎨 Sistema de Cores
 
@@ -76,7 +76,7 @@ O **Seu Bolso na Mão** é uma aplicação financeira moderna construída com Re
   - Menu hambúrguer (ícone de 3 linhas)
   - Toggle entre "Pessoa Física" e "Empresa"
 
-#### Resumo Financeiro
+#### Resumo Pig
 - **Cards de métricas**:
   - Receitas (ícone trending_up)
   - Saldo Positivo (ícone account_balance_wallet)

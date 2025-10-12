@@ -24,8 +24,8 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
 
   const itemsPerView = 2; // Mostrar 2 cards por vez
   const maxIndex = Math.max(0, cards.length - itemsPerView);
-  // Calcular número de slides baseado no número de cards - ajuste para mostrar todos os cards
-  const totalSlides = Math.max(1, cards.length - 1); // Para 4 cards = 3 slides
+  // Calcular número de slides baseado no número de cards
+  const totalSlides = Math.max(1, cards.length - itemsPerView + 1); // Para 4 cards = 3 slides
   const threshold = 50; // Distância mínima para trocar de slide
 
 
@@ -55,10 +55,6 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
     setStartX(e.touches[0].pageX);
     setStartY(e.touches[0].pageY);
     setDragDistance(0);
-    // Só prevenir default se não for scroll vertical
-    if (e.cancelable) {
-      e.preventDefault();
-    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -69,12 +65,14 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
     const deltaX = currentX - startX;
     const deltaY = currentY - startY;
     
-    // Só processar se o movimento horizontal for maior que vertical (para evitar conflito com scroll vertical)
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      if (e.cancelable) {
-        e.preventDefault();
-      }
+    // Só processar se o movimento horizontal for maior que vertical
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+      e.preventDefault();
       setDragDistance(deltaX);
+    } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      // Se for movimento vertical, cancelar o dragging
+      setIsDragging(false);
+      setDragDistance(0);
     }
   };
 
@@ -87,7 +85,7 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
       if (dragDistance > 0 && currentIndex > 0) {
         // Arrastar para direita - voltar
         goToSlide(currentIndex - 1);
-      } else if (dragDistance < 0 && currentIndex < totalSlides - 1) {
+      } else if (dragDistance < 0 && currentIndex < maxIndex) {
         // Arrastar para esquerda - avançar
         goToSlide(currentIndex + 1);
       }
@@ -97,23 +95,23 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
   };
 
   const goToSlide = useCallback((index: number) => {
-    const clampedIndex = Math.max(0, Math.min(index, totalSlides - 1));
+    const clampedIndex = Math.max(0, Math.min(index, maxIndex));
     setCurrentIndex(clampedIndex);
-  }, [totalSlides]);
+  }, [maxIndex]);
 
   // Adicionar navegação por teclado
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft' && currentIndex > 0) {
         goToSlide(currentIndex - 1);
-      } else if (e.key === 'ArrowRight' && currentIndex < totalSlides - 1) {
+      } else if (e.key === 'ArrowRight' && currentIndex < maxIndex) {
         goToSlide(currentIndex + 1);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, totalSlides, goToSlide]);
+  }, [currentIndex, maxIndex, goToSlide]);
 
   const formatValue = (value: number, cardId: string) => {
     // Para o card de saldo, preservar o sinal negativo se o valor for negativo
@@ -130,7 +128,7 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
       <div 
         ref={carouselRef}
         className={`overflow-hidden select-none w-full ${isDragging ? 'cursor-grabbing' : ''}`}
-        style={{ touchAction: 'pan-y pinch-zoom' }}
+        style={{ touchAction: 'pan-y' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

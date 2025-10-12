@@ -19,6 +19,7 @@ const NovoLancamento = ({ embedded = false, onClose, editTx, onTransactionSaved 
   const [categoria, setCategoria] = useState('');
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
+  const [rawValue, setRawValue] = useState(''); // Valor numérico sem formatação
   const [errors, setErrors] = useState<{ categoria?: string; valor?: string }>({});
   const [categorias, setCategorias] = useState<Array<{ id: string; name: string; type: 'entrada' | 'saida'; color: string }>>([]);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -54,9 +55,13 @@ const NovoLancamento = ({ embedded = false, onClose, editTx, onTransactionSaved 
       setCategoria(editTx.category_id || '');
       setDescricao(editTx.description || '');
       try {
-        setValor(Number(editTx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
+        const amount = Number(editTx.amount);
+        const formatted = amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        setValor(formatted);
+        setRawValue(String(Math.round(amount * 100)));
       } catch {
         setValor(String(editTx.amount));
+        setRawValue('');
       }
     }
   }, [editTx]);
@@ -126,12 +131,45 @@ const NovoLancamento = ({ embedded = false, onClose, editTx, onTransactionSaved 
     return date.toLocaleDateString('pt-BR');
   };
 
+  // Formatar valor automaticamente
+  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    
+    // Remove tudo que não é número
+    const numbersOnly = input.replace(/\D/g, '');
+    
+    // Se estiver vazio, limpar
+    if (numbersOnly === '') {
+      setValor('');
+      setRawValue('');
+      return;
+    }
+    
+    // Converter para número (em centavos)
+    const numericValue = parseInt(numbersOnly, 10);
+    
+    // Converter de centavos para reais
+    const valueInReais = numericValue / 100;
+    
+    // Formatar para exibição
+    const formatted = valueInReais.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    setRawValue(numbersOnly);
+    setValor(formatted);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: { categoria?: string; valor?: string } = {};
-    const amountNumber = parseFloat(String(valor).replace(/\./g, '').replace(',', '.'));
+    
+    // Usar rawValue para calcular o valor correto
+    const amountNumber = rawValue ? parseInt(rawValue, 10) / 100 : 0;
+    
     if (!categoria) newErrors.categoria = 'Selecione uma categoria';
-    if (!valor || isNaN(amountNumber) || amountNumber === 0) newErrors.valor = 'Informe um valor válido';
+    if (!valor || !rawValue || amountNumber === 0) newErrors.valor = 'Informe um valor válido';
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
     try {
@@ -428,11 +466,11 @@ const NovoLancamento = ({ embedded = false, onClose, editTx, onTransactionSaved 
               <input
                 className="w-full h-full bg-transparent border-0 p-0 text-[1.125rem] font-medium text-[#1f2937] placeholder-gray-400 focus:ring-0 focus:outline-none"
                 id="valor"
-                inputMode="decimal"
+                inputMode="numeric"
                 placeholder="0,00"
                 type="text"
                 value={valor}
-                onChange={(e) => setValor(e.target.value)}
+                onChange={handleValorChange}
               />
             </div>
             {errors.valor && <p className="mt-1 text-xs text-red-500">{errors.valor}</p>}

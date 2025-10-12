@@ -16,19 +16,40 @@ const LembretesPagamento = ({ embedded = false, onClose }: LembretesPagamentoPro
   const { toast } = useToast();
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
+  const [rawAmount, setRawAmount] = useState(''); // Valor numérico sem formatação
   const [installments, setInstallments] = useState('1');
   const [paymentDay, setPaymentDay] = useState('');
   // repetição mensal será assumida pela lógica de cálculo das parcelas no Dashboard
   const [saving, setSaving] = useState(false);
 
-  const parseCurrencyPtBr = (value: string) => {
-    // aceita formatos "1.234,56" ou "1234,56" ou "1234.56"
-    const normalized = value
-      .replace(/\s/g, '')
-      .replace(/\./g, '')
-      .replace(/,/g, '.');
-    const num = Number(normalized);
-    return isNaN(num) ? NaN : num;
+  // Formatar valor automaticamente
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    
+    // Remove tudo que não é número
+    const numbersOnly = input.replace(/\D/g, '');
+    
+    // Se estiver vazio, limpar
+    if (numbersOnly === '') {
+      setAmount('');
+      setRawAmount('');
+      return;
+    }
+    
+    // Converter para número (em centavos)
+    const numericValue = parseInt(numbersOnly, 10);
+    
+    // Converter de centavos para reais
+    const valueInReais = numericValue / 100;
+    
+    // Formatar para exibição
+    const formatted = valueInReais.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    setRawAmount(numbersOnly);
+    setAmount(formatted);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,9 +65,12 @@ const LembretesPagamento = ({ embedded = false, onClose }: LembretesPagamentoPro
         toast({ title: 'Informe a descrição', description: 'Ex.: Conta de Luz' });
         return;
       }
-      const parsedAmount = parseCurrencyPtBr(amount);
-      if (!isFinite(parsedAmount) || parsedAmount <= 0) {
-        toast({ title: 'Informe um valor válido', description: 'Use formato 100,00' });
+      
+      // Usar rawAmount para calcular o valor correto
+      const parsedAmount = rawAmount ? parseInt(rawAmount, 10) / 100 : 0;
+      
+      if (!rawAmount || parsedAmount <= 0) {
+        toast({ title: 'Informe um valor válido', description: 'Digite um valor maior que zero' });
         return;
       }
       const totalInstallments = Math.max(1, parseInt(installments || '1', 10));
@@ -166,11 +190,11 @@ const LembretesPagamento = ({ embedded = false, onClose }: LembretesPagamentoPro
               <input
                 className="w-full h-full bg-transparent text-gray-900 placeholder:text-gray-400 border-none rounded-lg pl-2 pr-4 text-lg font-medium focus:ring-0 focus:outline-none"
                 id="amount"
-                inputMode="decimal"
+                inputMode="numeric"
                 placeholder="0,00"
                 type="text"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={handleAmountChange}
               />
             </div>
           </div>

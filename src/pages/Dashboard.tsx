@@ -533,9 +533,9 @@ const Dashboard = () => {
               setActiveHeaderPanel('settings');
               setIsHeaderSheetOpen(true);
             }}
-            className="relative rounded-xl overflow-hidden shadow-lg h-24 cursor-pointer bg-gradient-to-r from-[#3ecf8e] to-[#2ab676]"
+            className="relative rounded-xl overflow-hidden shadow-lg h-24 cursor-pointer"
             style={{
-              backgroundImage: 'url(/Banner.png?v=2)',
+              backgroundImage: 'url(/banner-financeiro.png?v=1)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat'

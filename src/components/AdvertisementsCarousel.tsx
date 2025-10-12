@@ -92,10 +92,6 @@ const AdvertisementsCarousel = () => {
     setStartX(e.touches[0].pageX);
     setStartY(e.touches[0].pageY);
     setDragDistance(0);
-    // Só prevenir default se não for scroll vertical
-    if (e.cancelable) {
-      e.preventDefault();
-    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -107,11 +103,13 @@ const AdvertisementsCarousel = () => {
     const deltaY = currentY - startY;
     
     // Só processar se o movimento horizontal for maior que vertical
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      if (e.cancelable) {
-        e.preventDefault();
-      }
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+      e.preventDefault();
       setDragDistance(deltaX);
+    } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      // Se for movimento vertical, cancelar o dragging
+      setIsDragging(false);
+      setDragDistance(0);
     }
   };
 
@@ -153,7 +151,7 @@ const AdvertisementsCarousel = () => {
       <div 
         ref={carouselRef}
         className={`overflow-hidden select-none w-full ${isDragging ? 'cursor-grabbing' : ''}`}
-        style={{ touchAction: 'pan-y pinch-zoom' }}
+        style={{ touchAction: 'pan-y' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

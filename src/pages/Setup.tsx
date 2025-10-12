@@ -275,7 +275,7 @@ const Setup = () => {
           <div className="bg-[#3ecf8e] h-1 rounded-full" style={{ width: '60%' }}></div>
         </div>
         <h1 className="text-xl font-semibold text-gray-800">Configuração Inicial</h1>
-        <p className="text-sm text-gray-600">Configure suas principais categorias financeiras</p>
+        <p className="text-sm text-gray-600">Configure suas principais categorias Pig</p>
       </header>
 
       <main className="bg-white px-5 -mt-10 rounded-t-2xl pt-6 pb-28">

@@ -1,4 +1,4 @@
-# FinanSaaS
+# Pig
 
 Aplicação React + Vite + TypeScript para gerenciamento financeiro.
 

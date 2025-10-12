@@ -67,7 +67,7 @@ const ChartPreference = () => {
         </div>
         <div className="space-y-1">
           <h1 className="text-gray-800 text-xl font-semibold">Preferência de Visualização</h1>
-          <p className="text-gray-600 text-[15px]">Escolha como visualizar seus dados financeiros</p>
+          <p className="text-gray-600 text-[15px]">Escolha como visualizar seus dados Pig</p>
         </div>
       </header>
 
