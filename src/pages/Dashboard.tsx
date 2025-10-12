@@ -146,7 +146,8 @@ const Dashboard = () => {
       }
     });
     
-    setMonthlyFixedExpenses(total);
+    // Arredondar para 2 casas decimais para evitar problemas de precisão
+    setMonthlyFixedExpenses(Math.round(total * 100) / 100);
   };
 
   useEffect(() => {
@@ -188,8 +189,9 @@ const Dashboard = () => {
         }
       });
 
-      setTotalIncome(income);
-      setTotalExpense(expense);
+      // Arredondar para 2 casas decimais para evitar problemas de precisão
+      setTotalIncome(Math.round(income * 100) / 100);
+      setTotalExpense(Math.round(expense * 100) / 100);
     } catch (e) {
       console.error('Erro ao carregar totais', e);
     }
@@ -247,28 +249,28 @@ const Dashboard = () => {
       id: 'income',
       icon: 'trending_up',
       title: 'Entradas Totais',
-      value: totalIncome,
+      value: Math.round(totalIncome * 100) / 100,
       color: 'text-[#3ecf8e]'
     },
     {
       id: 'balance',
       icon: 'account_balance_wallet',
       title: 'Saldo',
-      value: totalIncome - totalExpense,
+      value: Math.round((totalIncome - totalExpense) * 100) / 100,
       color: (totalIncome - totalExpense) >= 0 ? 'text-[#3ecf8e]' : 'text-[#FF7F6A]'
     },
     {
       id: 'expenses',
       icon: 'trending_down',
       title: 'Despesas Totais',
-      value: totalExpense,
+      value: Math.round(totalExpense * 100) / 100,
       color: 'text-[#FF7F6A]'
     },
     {
       id: 'fixed',
       icon: 'event_repeat',
       title: 'Despesas Mensais Fixas',
-      value: monthlyFixedExpenses,
+      value: Math.round(monthlyFixedExpenses * 100) / 100,
       color: 'text-[#FF7F6A]'
     }
   ];
