@@ -148,18 +148,18 @@ const FinancialCarousel = ({ cards }: FinancialCarouselProps) => {
               key={card.id}
               className="flex-shrink-0 w-[calc(50%-8px)] min-w-[calc(50%-8px)]"
             >
-              <div className="rounded-lg border border-border bg-card p-3 shadow-sm flex items-center gap-3 h-full min-h-[80px]">
-                <span 
-                  className={`material-symbols-outlined text-2xl flex-shrink-0 ${card.color || 'text-[#3ecf8e]'}`}
-                >
-                  {card.icon}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-muted-foreground truncate">{card.title}</p>
-                  <p className="text-lg font-bold text-foreground">
-                    R$ <span className="inline">{formatValue(card.value, card.id) < 0 ? '-' : ''}</span><CountUp from={0} to={Math.abs(formatValue(card.value, card.id))} separator="." duration={1} className="inline" />
-                  </p>
+              <div className="rounded-lg border border-border bg-card p-3 shadow-sm flex flex-col h-full min-h-[80px] justify-center">
+                <div className="flex items-center gap-2 mb-2">
+                  <span 
+                    className={`material-symbols-outlined text-lg ${card.color || 'text-[#3ecf8e]'}`}
+                  >
+                    {card.icon}
+                  </span>
+                  <p className="text-xs text-muted-foreground truncate">{card.title}</p>
                 </div>
+                <p className="text-sm font-bold text-foreground">
+                  R$ <span className="inline">{formatValue(card.value, card.id) < 0 ? '-' : ''}</span><CountUp from={0} to={Math.abs(formatValue(card.value, card.id))} separator="." duration={1} className="inline" />
+                </p>
               </div>
             </div>
           ))}
